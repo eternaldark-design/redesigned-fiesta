@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { Person, PALETTES, climbPose } from "../Person";
+import { Person, PALETTES, STAND_H, climbPose } from "../Person";
 import { mod } from "../utils";
 
 export const CLIMB_FRAMES = 134;
@@ -10,7 +10,7 @@ const DY = 64;
 const P = 15; // frames por escalón
 const FOOT_X = 480;
 const FOOT_Y = 1400;
-const SCALE = 2.6;
+const SCALE = 2.3;
 
 const stairsPath = () => {
   let d = `M ${FOOT_X - 16 * DX} 3200`;
@@ -39,7 +39,7 @@ export const Climb: React.FC = () => {
       <Person
         key={pal}
         x={fx}
-        y={fy - 90 * scale - Math.abs(Math.cos(phase + ph)) * 6 * scale}
+        y={fy - STAND_H * scale - Math.abs(Math.cos(phase + ph)) * 6 * scale}
         scale={scale}
         pose={climbPose(phase + ph)}
         palette={PALETTES[pal]}
@@ -127,7 +127,7 @@ export const Climb: React.FC = () => {
         <ellipse cx={FOOT_X + 20} cy={FOOT_Y + 8} rx={110} ry={12} fill="rgba(0,0,0,0.3)" />
         <Person
           x={FOOT_X}
-          y={FOOT_Y - 90 * SCALE - bob}
+          y={FOOT_Y - STAND_H * SCALE - bob}
           scale={SCALE}
           pose={climbPose(phase)}
           palette={PALETTES[0]}

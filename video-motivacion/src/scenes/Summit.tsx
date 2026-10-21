@@ -1,12 +1,12 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { CHEER, PALETTES, Person, lerpPose, STAND } from "../Person";
+import { CHEER, PALETTES, Person, STAND_H, lerpPose, STAND } from "../Person";
 import { mod, ramp, rnd } from "../utils";
 
 export const SUMMIT_FRAMES = 180;
 
 const TOP = 1310;
-const SCALE = 2.6;
+const SCALE = 2.3;
 const CONFETTI = ["#ff5a36", "#ffd23f", "#19c3a6", "#8b5cf6", "#ff6fae", "#3aa0ff", "#ffffff"];
 
 export const Summit: React.FC = () => {
@@ -103,7 +103,7 @@ export const Summit: React.FC = () => {
               <ellipse cx={c.x + 6} cy={c.y + 4} rx={34 * c.s} ry={6} fill="rgba(0,0,0,0.25)" />
               <Person
                 x={c.x}
-                y={c.y - 90 * c.s - jp}
+                y={c.y - STAND_H * c.s - jp}
                 scale={c.s}
                 pose={lerpPose(STAND, CHEER, ramp(frame, 4 + i, 16 + i))}
                 palette={PALETTES[c.pal]}
@@ -116,7 +116,7 @@ export const Summit: React.FC = () => {
         <ellipse cx={560} cy={TOP + 4} rx={150 - jump * 0.8} ry={14} fill="rgba(0,0,0,0.3)" />
         <Person
           x={540}
-          y={TOP - 90 * SCALE - jump}
+          y={TOP - STAND_H * SCALE - jump}
           scale={SCALE}
           pose={pose}
           palette={PALETTES[0]}

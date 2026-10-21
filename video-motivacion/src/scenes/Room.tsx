@@ -1,10 +1,10 @@
 import React from "react";
 import { AbsoluteFill, interpolateColors, useCurrentFrame } from "remotion";
-import { Person, PALETTES, SIT, SIT_UP, STAND, STRETCH, lerpPose } from "../Person";
+import { FOOT, Person, PALETTES, SHIN_LEN, SIT, SIT_UP, STAND, STAND_H, STRETCH, lerpPose } from "../Person";
 import { lerp, ramp, rnd } from "../utils";
 
 const FLOOR = 1480;
-const SCALE = 2.6;
+const SCALE = 2.3;
 const ALARM_AT = 120;
 
 export const ROOM_FRAMES = 254;
@@ -31,7 +31,7 @@ export const Room: React.FC = () => {
     pose = { ...pose, torso: pose.torso + breathe, head: pose.head + breathe * 0.6 };
   }
   const hipX = lerp(540, 650, rise);
-  const hipY = lerp(FLOOR - 45 * SCALE - 2, FLOOR - 90 * SCALE, rise);
+  const hipY = lerp(FLOOR - (SHIN_LEN + FOOT) * SCALE, FLOOR - STAND_H * SCALE, rise);
 
   // --- despertador ----------------------------------------------------------
   const ringing = frame >= ALARM_AT && frame < 205;

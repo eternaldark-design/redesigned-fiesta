@@ -1,11 +1,11 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { Person, PALETTES, runPose } from "../Person";
+import { Person, PALETTES, STAND_H, runPose } from "../Person";
 import { mod, ramp, rnd } from "../utils";
 
 export const RUN_FRAMES = 194;
 const GROUND = 1700;
-const SCALE = 2.6;
+const SCALE = 2.3;
 
 const hills = (off: number, base: number, amp: number, wl: number) => {
   let d = `M -20 1920 L -20 ${base}`;
@@ -113,7 +113,7 @@ export const Run: React.FC = () => {
             <ellipse cx={j.x + 6} cy={1560} rx={40 * j.s} ry={6} fill="rgba(0,0,0,0.25)" />
             <Person
               x={j.x + Math.sin(frame / 40 + i) * 14}
-              y={1560 - 90 * j.s - Math.abs(Math.cos(phase + j.ph)) * 6}
+              y={1560 - STAND_H * j.s - Math.abs(Math.cos(phase + j.ph)) * 6}
               scale={j.s}
               pose={runPose(phase + j.ph, 12, 0.9)}
               palette={PALETTES[j.pal]}
@@ -125,7 +125,7 @@ export const Run: React.FC = () => {
         <ellipse cx={500} cy={GROUND + 6} rx={150} ry={16} fill="rgba(0,0,0,0.35)" />
         <Person
           x={470}
-          y={GROUND - 90 * SCALE - bob}
+          y={GROUND - STAND_H * SCALE - bob}
           scale={SCALE}
           pose={runPose(phase, 16)}
           palette={PALETTES[0]}
