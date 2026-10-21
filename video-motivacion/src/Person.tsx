@@ -1,4 +1,5 @@
 import React from "react";
+import { blobPath } from "./art";
 
 /** Ángulos en grados, "hacia adelante" es positivo y 0 = brazo/pierna colgando. */
 export type Joint = [number, number];
@@ -237,7 +238,7 @@ const Arm: React.FC<{ a: Joint; p: Palette; k: string; torso: number; dark?: boo
   </g>
 );
 
-const Hair: React.FC<{ p: Palette }> = ({ p }) => {
+const Hair: React.FC<{ p: Palette; sway: number; t: number }> = ({ p, sway, t }) => {
   const cap =
     "M -10.8 -17 C -14 -31 -4 -41 5 -40 C 13 -39 17 -33 15 -26.5 C 12.5 -30.5 8 -31.5 3 -31 C -2 -30.5 -5.5 -27 -5.8 -21 C -6 -17.5 -8.5 -13.5 -10.8 -17 Z";
   const dark = shade(p.hair, -0.25);
@@ -245,7 +246,13 @@ const Hair: React.FC<{ p: Palette }> = ({ p }) => {
     case "ponytail":
       return (
         <g>
-          <path d="M -9 -31 C -24 -32 -28 -14 -21 -1 C -18 -12 -14 -22 -7 -26 Z" fill={dark} />
+          <g transform={`rotate(${sway} -9 -29)`}>
+            <path
+              d={`M -9 -31 C -24 -32 ${-28 + sway * 0.3} -14 ${-21 + sway * 0.6} -1 C -18 -12 -14 -22 -7 -26 Z`}
+              fill={dark}
+            />
+            <path d={`M -10 -29 C -20 -26 ${-23 + sway * 0.3} -14 ${-19 + sway * 0.5} -6`} stroke={shade(p.hair, 0.25)} strokeWidth={1.2} fill="none" opacity={0.6} />
+          </g>
           <path d={cap} fill={p.hair} />
           <circle cx={-9} cy={-29} r={2.6} fill="#ff5a36" />
         </g>
@@ -262,7 +269,7 @@ const Hair: React.FC<{ p: Palette }> = ({ p }) => {
             [-12, -24],
             [-9, -19],
           ].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={5.6} />
+            <path key={i} d={blobPath(5.8, 5.4, i + 3, 0.35, 7)} transform={`translate(${x + Math.sin(t / 9 + i) * 0.6} ${y + Math.cos(t / 11 + i) * 0.6})`} />
           ))}
         </g>
       );
@@ -273,12 +280,19 @@ const Hair: React.FC<{ p: Palette }> = ({ p }) => {
         <g>
           <path d={cap} fill={p.hair} />
           <path d="M -3 -39 C 4 -42 13 -38 15 -29" stroke={shade(p.hair, 0.25)} strokeWidth={1.4} fill="none" opacity={0.6} />
+          <path
+            d={`M 4 -40 q ${5 + sway * 0.4} -7 ${10 + sway * 0.5} -3`}
+            stroke={p.hair}
+            strokeWidth={1.8}
+            fill="none"
+            strokeLinecap="round"
+          />
         </g>
       );
   }
 };
 
-const Head: React.FC<{ p: Palette; k: string }> = ({ p, k }) => (
+const Head: React.FC<{ p: Palette; k: string; sway: number; t: number }> = ({ p, k, sway, t }) => (
   <g>
     <path d={taper(11, 11, 11, 12)} fill={shade(p.skin, -0.25)} transform="translate(0 -9)" />
     <path d="M -5 -9 L 6 -9 L 6 -2 L -5 -2 Z" fill={`url(#sk${k})`} />
@@ -288,9 +302,15 @@ const Head: React.FC<{ p: Palette; k: string }> = ({ p, k }) => (
     <path d="M 12 -25 L 17 -18.5 L 12.4 -18 Z" fill={shade(p.skin, -0.1)} />
     <ellipse cx={8} cy={-24} rx={2.5} ry={1.8} fill="#fff" />
     <circle cx={8.9} cy={-24} r={1.3} fill="#2a1a14" />
+    {t % 96 < 4 && (
+      <g>
+        <ellipse cx={8} cy={-24} rx={3.3} ry={2.5} fill={p.skin} />
+        <path d="M 5.4 -23.6 Q 8 -22.2 10.6 -23.6" stroke="#2a1a14" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+      </g>
+    )}
     <path d="M 4.5 -28 Q 8.5 -30 12.5 -27.5" stroke={p.hair} strokeWidth={1.9} fill="none" strokeLinecap="round" />
     <path d="M 9 -13.5 Q 11.5 -12.5 14 -14" stroke="#7a3f33" strokeWidth={1.4} fill="none" strokeLinecap="round" />
-    <Hair p={p} />
+    <Hair p={p} sway={sway} t={t} />
   </g>
 );
 
@@ -303,9 +323,14 @@ export const Person: React.FC<{
   pose: Pose;
   palette?: Palette;
   opacity?: number;
-}> = ({ x, y, scale = 1, dir = 1, pose, palette = PALETTES[0], opacity = 1 }) => {
+  /** Cuadro actual: activa parpadeo, respiración y movimiento del pelo y la ropa. */
+  t?: number;
+}> = ({ x, y, scale = 1, dir = 1, pose, palette = PALETTES[0], opacity = 1, t = 0 }) => {
   const p = palette;
   const k = keyOf(p);
+  const sway = Math.sin(t / 5) * 7 - pose.torso * 0.45;
+  const breathe = Math.sin(t / 14) * 0.9;
+  const hem = Math.sin(t / 4) * 2.5;
   return (
     <g transform={`translate(${x} ${y}) scale(${scale * dir} ${scale})`} opacity={opacity}>
       <Defs p={p} k={k} />
@@ -318,14 +343,16 @@ export const Person: React.FC<{
         <path d="M -18 -4 L 18 -4 L 20 14 Q 0 21 -20 14 Z" fill={`url(#pa${k})`} />
         {/* camiseta */}
         <path
-          d="M -17 8 C -20 -14 -21 -38 -19 -54 C -18 -62 -12 -67 -3 -68 L 6 -68 C 15 -67 20 -60 19 -50 C 18 -32 18 -12 17 8 Q 0 12 -17 8 Z"
+          d={`M -17 8 C -20 -14 ${-21 - breathe} -38 -19 -54 C -18 -62 -12 -67 -3 -68 L 6 -68 C 15 -67 ${20 + breathe} -60 ${19 + breathe} -50 C ${18 + breathe} -32 18 -12 17 8 Q ${6 + hem} ${12 + hem * 0.5} -17 8 Z`}
           fill={`url(#sh${k})`}
         />
-        <path d="M -17 8 Q 0 12 17 8 L 17.2 3 Q 0 7 -17.2 3 Z" fill={shade(p.shirt, -0.22)} opacity={0.7} />
+        <path d={`M -17 8 Q ${6 + hem} ${12 + hem * 0.5} 17 8 L 17.2 3 Q 0 7 -17.2 3 Z`} fill={shade(p.shirt, -0.22)} opacity={0.7} />
+        <path d="M -12 -30 Q -4 -26 6 -32" stroke={shade(p.shirt, -0.3)} strokeWidth={1.6} fill="none" opacity={0.5} strokeLinecap="round" />
+        <path d="M -14 -14 Q -4 -10 8 -16" stroke={shade(p.shirt, -0.3)} strokeWidth={1.6} fill="none" opacity={0.45} strokeLinecap="round" />
         <path d="M -5 -68 Q 1 -60 7 -68" stroke={shade(p.shirt, -0.35)} strokeWidth={2.4} fill="none" strokeLinecap="round" />
         <path d="M 8 -52 C 10 -36 10 -22 9 -8" stroke={shade(p.shirt, 0.25)} strokeWidth={2} fill="none" opacity={0.35} strokeLinecap="round" />
         <g transform={`translate(0 ${-TORSO - 2}) rotate(${pose.head})`}>
-          <Head p={p} k={k} />
+          <Head p={p} k={k} sway={sway} t={t} />
         </g>
         <Arm a={pose.armF} p={p} k={k} torso={pose.torso} />
       </g>
