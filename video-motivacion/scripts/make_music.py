@@ -6,14 +6,29 @@ Arreglo, sincronizado con las escenas del video (1 compás = 2 s):
   14-18 s  build-up: riser + redoble de caja
   18-24 s  impacto + todo el arreglo hasta el final
 Uso: python3 scripts/make_music.py public/music.wav
+Para otra duración, mueve las secciones (en segundos):
+  python3 scripts/make_music.py public/music.wav --dur 60 --arp 8 --drums 18 \
+      --clap 24 --impact 43 --outro 55
 """
-import sys
+import argparse
 import wave
 
 import numpy as np
 
+ap = argparse.ArgumentParser()
+ap.add_argument("out", nargs="?", default="music.wav")
+ap.add_argument("--dur", type=float, default=24.0)
+ap.add_argument("--arp", type=float, default=4.0, help="entra el arpegio")
+ap.add_argument("--drums", type=float, default=8.0, help="entran bombo, bajo y hi-hats")
+ap.add_argument("--clap", type=float, default=12.0, help="entran las palmas")
+ap.add_argument("--impact", type=float, default=18.0, help="impacto (el build-up dura 4 s antes)")
+ap.add_argument("--outro", type=float, default=None, help="desde aquí solo pad y arpegio")
+args = ap.parse_args()
+
 SR = 44100
-DUR = 24.0
+DUR = args.dur
+ARP, DRUMS, CLAP, IMPACT = args.arp, args.drums, args.clap, args.impact
+OUTRO = args.outro if args.outro is not None else DUR
 BEAT = 0.5
 BAR = 2.0
 N = int(SR * DUR)
@@ -103,7 +118,7 @@ for bar in range(n_bars):
     root, notes = CHORDS[bar % 4]
     t0 = bar * BAR
     length = BAR + 0.6
-    level = 0.55 if bar < 4 else 0.8
+    level = 0.55 if t0 < DRUMS else 0.8
     for m in notes[:3]:
         env = adsr(int(length * SR), 0.5, 0.6)
         add(pad_L, t0, saw_soft(midi(m), length, -0.003) * env * level * 0.09)
@@ -115,13 +130,13 @@ for bar in range(n_bars):
     add(pad_R, t0, sub * env * 0.18)
 
     # arpegio en corcheas a partir del compás 2
-    if bar >= 2:
+    if t0 >= ARP:
         order = [0, 1, 2, 3, 2, 1, 2, 3]
         for i, o in enumerate(order):
             add(arp, t0 + i * 0.25, pluck(midi(notes[o] + 12), 0.5) * 0.22)
 
     # bajo en corcheas a partir del compás 4
-    if bar >= 4:
+    if DRUMS <= t0 < OUTRO:
         for i in range(8):
             f = midi(root + (12 if i % 4 == 3 else 0))
             t = np.arange(int(0.24 * SR)) / SR
@@ -132,28 +147,28 @@ for bar in range(n_bars):
 K = kick()
 for b in range(int(DUR / BEAT)):
     t = b * BEAT
-    if t >= 8.0:
+    if DRUMS <= t < OUTRO:
         add(drums, t, K * 0.95)
         add(drums, t + 0.25, hat())
-        if t >= 12.0 and b % 2 == 1 and t < 17.0:
+        if t >= CLAP and b % 2 == 1 and t < IMPACT - 1:
             add(drums, t, clap())
-        if t >= 18.0 and b % 2 == 1:
+        if t >= IMPACT and b % 2 == 1:
             add(drums, t, clap() * 1.2)
-# redoble de caja (16.0-17.8 s): corcheas -> semicorcheas, creciendo
-roll_t = 16.0
+# redoble de caja (2 s antes del impacto): corcheas -> semicorcheas, creciendo
+roll_t = IMPACT - 2
 step = 0.25
-while roll_t < 17.8:
-    g = (roll_t - 16.0) / 1.8
+while roll_t < IMPACT - 0.2:
+    g = (roll_t - (IMPACT - 2)) / 1.8
     add(drums, roll_t, noise_burst(0.2, 18) * (0.25 + 0.6 * g))
-    if roll_t > 17.0:
+    if roll_t > IMPACT - 1:
         add(drums, roll_t + step / 2, noise_burst(0.15, 22) * (0.3 + 0.6 * g))
     roll_t += step
 # hi-hats abiertos en cada contratiempo tras el impacto
-for b in range(int(18 / BEAT), int(DUR / BEAT)):
+for b in range(int(IMPACT / BEAT), int(OUTRO / BEAT)):
     add(drums, b * BEAT + 0.25, hat() * 1.4)
 
-# riser 14 -> 18 s
-rs, re_ = 14.0, 18.0
+# riser durante los 4 s previos al impacto
+rs, re_ = IMPACT - 4, IMPACT
 i0, i1 = int(rs * SR), int(re_ * SR)
 tt = (T[i0:i1] - rs) / (re_ - rs)
 nz = np.diff(rng.standard_normal(i1 - i0), prepend=0)
@@ -165,7 +180,7 @@ fx[i0:i1] += np.sin(sweep) * (tt ** 1.8) * 0.12
 tb = np.arange(int(2.6 * SR)) / SR
 boom = np.sin(2 * np.pi * (48 + 70 * np.exp(-tb * 10)) * tb) * np.exp(-tb * 1.6) * 0.9
 crash = noise_burst(2.6, 1.6) * 0.38
-add(impact, 18.0, boom + crash)
+add(impact, IMPACT, boom + crash)
 
 # --- reverb en pad + arpegio ------------------------------------------------
 def reverb(sig, seed, wet=0.32):
@@ -181,7 +196,7 @@ def reverb(sig, seed, wet=0.32):
 
 # sidechain: el pad, arpegio y bajo "respiran" con el bombo desde los 8 s
 phase = np.mod(T, BEAT)
-duck = np.where(T >= 8.0, 1 - 0.65 * np.exp(-phase / 0.11), 1.0)
+duck = np.where((T >= DRUMS) & (T < OUTRO), 1 - 0.65 * np.exp(-phase / 0.11), 1.0)
 
 pad_L *= duck
 pad_R *= duck
@@ -193,7 +208,7 @@ wetR = reverb(pad_R + arp * 0.8, 2)
 
 # corte dramático justo antes del impacto
 gate = np.ones(N)
-g0, g1 = int(17.82 * SR), int(18.0 * SR)
+g0, g1 = int((IMPACT - 0.18) * SR), int(IMPACT * SR)
 gate[g0:g1] = 0.0
 core_L = (pad_L + arp * 0.9 + bass + drums + wetL) * gate
 core_R = (pad_R + arp * 1.1 + bass + drums + wetR) * gate
@@ -211,7 +226,7 @@ peak = max(np.max(np.abs(L)), np.max(np.abs(R)))
 L, R = L / peak * 0.7, R / peak * 0.7
 pcm = (np.stack([L, R], axis=1) * 32767).astype("<i2")
 
-out = sys.argv[1] if len(sys.argv) > 1 else "music.wav"
+out = args.out
 with wave.open(out, "wb") as w:
     w.setnchannels(2)
     w.setsampwidth(2)

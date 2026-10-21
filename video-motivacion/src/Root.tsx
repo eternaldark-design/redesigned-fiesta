@@ -1,6 +1,7 @@
 import { Composition } from "remotion";
 import { FPS, MotivationVideo, TOTAL_FRAMES } from "./Composition";
 import { PovVideo } from "./pov/PovVideo";
+import { IA_FRAMES, IaVideo } from "./ia/IaVideo";
 import { Room, ROOM_FRAMES } from "./scenes/Room";
 import { Run, RUN_FRAMES } from "./scenes/Run";
 import { Climb, CLIMB_FRAMES } from "./scenes/Climb";
@@ -13,6 +14,7 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition id="Motivacion" component={MotivationVideo} durationInFrames={TOTAL_FRAMES} {...size} />
       <Composition id="PovMotivacion" component={PovVideo} durationInFrames={TOTAL_FRAMES} {...size} />
+      <Composition id="IaNegocio" component={IaVideo} durationInFrames={IA_FRAMES} {...size} />
       <Composition id="Escena1-Cuarto" component={Room} durationInFrames={ROOM_FRAMES} {...size} />
       <Composition id="Escena2-Carrera" component={Run} durationInFrames={RUN_FRAMES} {...size} />
       <Composition id="Escena3-Escaleras" component={Climb} durationInFrames={CLIMB_FRAMES} {...size} />

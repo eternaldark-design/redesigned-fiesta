@@ -17,10 +17,10 @@ const CY = 1390;
 const S = 1.15;
 const W = (x: number, y: number): [number, number] => [CX + x * S, CY + y * S];
 
-const ol = { stroke: OUT, strokeWidth: 6, strokeLinejoin: "round", strokeLinecap: "round" } as const;
+export const ol = { stroke: OUT, strokeWidth: 6, strokeLinejoin: "round", strokeLinecap: "round" } as const;
 
 // --- utilería ----------------------------------------------------------------
-const Clock: React.FC<{ x: number; y: number; s?: number; rot?: number; ring?: boolean; t: number }> = ({
+export const Clock: React.FC<{ x: number; y: number; s?: number; rot?: number; ring?: boolean; t: number }> = ({
   x,
   y,
   s = 1,
@@ -57,7 +57,7 @@ const Clock: React.FC<{ x: number; y: number; s?: number; rot?: number; ring?: b
   );
 };
 
-const Barbell: React.FC<{ x1: number; x2: number; y: number }> = ({ x1, x2, y }) => (
+export const Barbell: React.FC<{ x1: number; x2: number; y: number }> = ({ x1, x2, y }) => (
   <g>
     <rect x={x1} y={y - 12} width={x2 - x1} height={24} fill="#b7bcc9" {...ol} />
     {[x1, x2].map((x, i) => {
@@ -72,7 +72,7 @@ const Barbell: React.FC<{ x1: number; x2: number; y: number }> = ({ x1, x2, y })
   </g>
 );
 
-const Pencil: React.FC = () => (
+export const Pencil: React.FC = () => (
   <g transform="rotate(35)" {...ol} strokeWidth={5}>
     <rect x={-8} y={-96} width={16} height={92} fill="#ffd23f" />
     <path d="M -8 -4 L 0 24 L 8 -4 Z" fill="#f2d3a0" />
@@ -81,7 +81,7 @@ const Pencil: React.FC = () => (
   </g>
 );
 
-const Notebook: React.FC<{ f: number }> = ({ f }) => {
+export const Notebook: React.FC<{ f: number }> = ({ f }) => {
   const lines = Math.min(5, Math.floor(f / 18));
   return (
     <g transform="rotate(-4)">
@@ -105,7 +105,7 @@ const Notebook: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-const Trophy: React.FC<{ t: number }> = ({ t }) => (
+export const Trophy: React.FC<{ t: number }> = ({ t }) => (
   <g transform="translate(0 -128)">
     <path d="M -84 -70 Q -128 -70 -118 -20 Q -108 20 -56 22" fill="none" stroke={OUT} strokeWidth={16} strokeLinecap="round" />
     <path d="M 84 -70 Q 128 -70 118 -20 Q 108 20 56 22" fill="none" stroke={OUT} strokeWidth={16} strokeLinecap="round" />
@@ -127,7 +127,7 @@ const Trophy: React.FC<{ t: number }> = ({ t }) => (
   </g>
 );
 
-const Mug: React.FC<{ t: number }> = ({ t }) => (
+export const Mug: React.FC<{ t: number }> = ({ t }) => (
   <g>
     {[-1, 0, 1].map((i) => (
       <path
@@ -148,7 +148,7 @@ const Mug: React.FC<{ t: number }> = ({ t }) => (
   </g>
 );
 
-const Window: React.FC<{ x: number; y: number; sky: string; moon?: boolean; t: number }> = ({ x, y, sky, moon, t }) => (
+export const Window: React.FC<{ x: number; y: number; sky: string; moon?: boolean; t: number }> = ({ x, y, sky, moon, t }) => (
   <g transform={`translate(${x} ${y})`}>
     <rect x={0} y={0} width={240} height={300} fill={sky} stroke={OUT} strokeWidth={8} />
     {moon && (
@@ -164,7 +164,7 @@ const Window: React.FC<{ x: number; y: number; sky: string; moon?: boolean; t: n
   </g>
 );
 
-const Lamp: React.FC<{ x: number; y: number; t: number }> = ({ x, y, t }) => (
+export const Lamp: React.FC<{ x: number; y: number; t: number }> = ({ x, y, t }) => (
   <g transform={`translate(${x} ${y})`}>
     <path d="M -10 -20 L -260 330 L 220 330 L 90 -20 Z" fill="#ffe7a0" opacity={0.16 + 0.03 * Math.sin(t / 7)} />
     <ellipse cx={0} cy={300} rx={70} ry={16} fill="#3a3a55" {...ol} />
@@ -174,7 +174,7 @@ const Lamp: React.FC<{ x: number; y: number; t: number }> = ({ x, y, t }) => (
   </g>
 );
 
-const Confetti: React.FC<{ f: number }> = ({ f }) => (
+export const Confetti: React.FC<{ f: number }> = ({ f }) => (
   <g>
     {Array.from({ length: 60 }).map((_, i) => {
       const y = mod(f * (5 + rnd(i + 1) * 6) + rnd(i + 2) * 2000, 2300) - 250;
@@ -194,7 +194,7 @@ const Confetti: React.FC<{ f: number }> = ({ f }) => (
   </g>
 );
 
-const Spot: React.FC<{ color?: string; op?: number }> = ({ color = "#cfe0ff", op = 0.12 }) => (
+export const Spot: React.FC<{ color?: string; op?: number }> = ({ color = "#cfe0ff", op = 0.12 }) => (
   <path d="M 420 470 L 660 470 L 1060 1920 L 20 1920 Z" fill={color} opacity={op} />
 );
 

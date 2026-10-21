@@ -7,7 +7,7 @@ const NAVY = "#2a3b78";
 const SUIT = "#1f2a55";
 const HEAD = "#eef1fb";
 
-export type Mood = "tired" | "grit" | "effort" | "happy";
+export type Mood = "tired" | "grit" | "effort" | "happy" | "wow";
 
 export type Hand = {
   x: number;
@@ -17,26 +17,30 @@ export type Hand = {
   /** Se dibuja encima de la cabeza (por ejemplo, para agarrar la gorra). */
   front?: boolean;
   fist?: boolean;
+  /** Índice extendido, para señalar. */
+  point?: boolean;
 };
 
 const MOODS: Record<
   Mood,
-  { lid: number; low: number; tilt: number; bags: number; brow: "none" | "angry" | "sad" | "happy"; mouth: "flat" | "smile" | "grit" | "open"; blush: number }
+  { lid: number; low: number; tilt: number; bags: number; brow: "none" | "angry" | "sad" | "happy"; mouth: "flat" | "smile" | "grit" | "open" | "o"; blush: number }
 > = {
   tired: { lid: 0.52, low: 0, tilt: -6, bags: 0.85, brow: "sad", mouth: "flat", blush: 0.3 },
   grit: { lid: 0.3, low: 0.05, tilt: 16, bags: 0.65, brow: "angry", mouth: "grit", blush: 0.3 },
   effort: { lid: 0.46, low: 0.38, tilt: 10, bags: 0.6, brow: "angry", mouth: "grit", blush: 0.45 },
   happy: { lid: 0, low: 0.12, tilt: 0, bags: 0, brow: "happy", mouth: "open", blush: 0.7 },
+  wow: { lid: 0, low: 0, tilt: 0, bags: 0.25, brow: "happy", mouth: "o", blush: 0.5 },
 };
 
-const Glove: React.FC<{ fist?: boolean }> = ({ fist }) => (
+const Glove: React.FC<{ fist?: boolean; point?: boolean }> = ({ fist, point }) => (
   <g stroke={OUT} strokeWidth={6} strokeLinejoin="round" strokeLinecap="round">
+    {point && <path d="M -10 -40 L -12 -104 Q -12 -118 0 -118 Q 12 -118 12 -104 L 12 -40 Z" fill="#fff" />}
     <ellipse cx={-36} cy={10} rx={16} ry={26} transform="rotate(28 -36 10)" fill="#fff" />
     <path
       d="M -34 20 Q -38 -26 -26 -42 Q -14 -54 0 -50 Q 18 -56 30 -42 Q 42 -26 36 20 Q 34 44 0 46 Q -30 44 -34 20 Z"
       fill="#fff"
     />
-    {fist ? (
+    {fist || point ? (
       <path d="M -24 -30 Q 0 -22 26 -30 M -26 -10 Q 0 -2 28 -10" fill="none" strokeWidth={4} />
     ) : (
       <path d="M -13 -48 L -13 -22 M 4 -52 L 4 -22 M 21 -46 L 21 -22" fill="none" strokeWidth={4} />
@@ -44,17 +48,17 @@ const Glove: React.FC<{ fist?: boolean }> = ({ fist }) => (
   </g>
 );
 
-const Arm: React.FC<{ from: [number, number]; hand: Hand; side: -1 | 1 }> = ({ from, hand, side }) => {
+const Arm: React.FC<{ from: [number, number]; hand: Hand; side: -1 | 1; sleeve: string }> = ({ from, hand, side, sleeve }) => {
   const mx = (from[0] + hand.x) / 2 + side * 40;
   const my = (from[1] + hand.y) / 2 + 40;
   const d = `M ${from[0]} ${from[1]} Q ${mx} ${my} ${hand.x} ${hand.y}`;
   return (
     <g>
       <path d={d} stroke={OUT} strokeWidth={76} strokeLinecap="round" fill="none" />
-      <path d={d} stroke={NAVY} strokeWidth={62} strokeLinecap="round" fill="none" />
+      <path d={d} stroke={sleeve} strokeWidth={62} strokeLinecap="round" fill="none" />
       <g transform={`translate(${hand.x} ${hand.y}) rotate(${hand.rot ?? 0})`}>
         {hand.prop}
-        <Glove fist={hand.fist} />
+        <Glove fist={hand.fist} point={hand.point} />
       </g>
     </g>
   );
@@ -120,7 +124,31 @@ export const Mascot: React.FC<{
   droop?: number;
   sweat?: boolean;
   headFront?: React.ReactNode;
-}> = ({ cx, cy, s = 1.15, mood, t, look = [0, 0], left, right, droop = 0, sweat, headFront }) => {
+  /** Colores de gorra [copa, visera] y traje: sirven para otros personajes. */
+  cap?: [string, string];
+  suit?: string;
+  mustache?: boolean;
+  /** Luz de color sobre la cara (por ejemplo, el brillo de una pantalla). */
+  light?: { color: string; op: number };
+  id?: string;
+}> = ({
+  cx,
+  cy,
+  s = 1.15,
+  mood,
+  t,
+  look = [0, 0],
+  left,
+  right,
+  droop = 0,
+  sweat,
+  headFront,
+  cap = [NAVY, "#202e63"],
+  suit = SUIT,
+  mustache,
+  light,
+  id = "a",
+}) => {
   const m = MOODS[mood];
   const blink = t % 110 < 4 ? 1 : 0;
   const lid = Math.max(m.lid, blink);
@@ -149,6 +177,12 @@ export const Mascot: React.FC<{
           <stop offset="0.7" stopColor={HEAD} />
           <stop offset="1" stopColor="#c9cfec" />
         </radialGradient>
+        {light && (
+          <linearGradient id={`povLight${id}`} x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stopColor={light.color} stopOpacity="1" />
+            <stop offset="0.8" stopColor={light.color} stopOpacity="0" />
+          </linearGradient>
+        )}
         <filter id="povBlur">
           <feGaussianBlur stdDeviation="6" />
         </filter>
@@ -157,7 +191,7 @@ export const Mascot: React.FC<{
       {/* cuerpo */}
       <path
         d="M -270 340 Q -262 196 -150 172 L 150 172 Q 262 196 270 340 L 270 900 L -270 900 Z"
-        fill={SUIT}
+        fill={suit}
         stroke={OUT}
         strokeWidth={7}
         strokeLinejoin="round"
@@ -170,8 +204,8 @@ export const Mascot: React.FC<{
       </g>
 
       {/* brazos */}
-      {!left.front && <Arm from={[-205, 260 + droop]} hand={left} side={-1} />}
-      {!right.front && <Arm from={[205, 260 + droop]} hand={right} side={1} />}
+      {!left.front && <Arm from={[-205, 260 + droop]} hand={left} side={-1} sleeve={cap[0]} />}
+      {!right.front && <Arm from={[205, 260 + droop]} hand={right} side={1} sleeve={cap[0]} />}
 
       {/* cabeza */}
       <g transform={`translate(0 ${bob + droop}) rotate(${rot})`}>
@@ -232,6 +266,21 @@ export const Mascot: React.FC<{
             <path d="M -26 118 V 150 M 0 118 V 150 M 26 118 V 150" fill="none" strokeWidth={4} />
           </g>
         )}
+        {m.mouth === "o" && (
+          <g stroke={OUT} strokeWidth={6}>
+            <ellipse cx={0} cy={140} rx={26} ry={32} fill="#7a2230" />
+            <ellipse cx={0} cy={158} rx={14} ry={9} fill="#ff7a8f" strokeWidth={0} />
+          </g>
+        )}
+        {mustache && (
+          <path
+            d="M -70 108 Q -40 82 0 100 Q 40 82 70 108 Q 50 120 0 110 Q -50 120 -70 108 Z"
+            fill="#4a2c1e"
+            stroke={OUT}
+            strokeWidth={5}
+            strokeLinejoin="round"
+          />
+        )}
         {m.mouth === "open" && (
           <g stroke={OUT} strokeWidth={6} strokeLinejoin="round">
             <path d="M -62 112 Q 0 108 62 112 Q 58 184 0 188 Q -58 184 -62 112 Z" fill="#7a2230" />
@@ -260,12 +309,16 @@ export const Mascot: React.FC<{
           </g>
         )}
 
+        {light && (
+          <path d={headPath} fill={`url(#povLight${id})`} opacity={light.op} style={{ mixBlendMode: "screen" }} />
+        )}
+
         {/* gorra */}
         <g stroke={OUT} strokeWidth={7} strokeLinejoin="round" strokeLinecap="round">
-          <path d="M -218 -34 Q -236 -252 0 -266 Q 236 -252 218 -34 Q 0 -78 -218 -34 Z" fill={NAVY} />
+          <path d="M -218 -34 Q -236 -252 0 -266 Q 236 -252 218 -34 Q 0 -78 -218 -34 Z" fill={cap[0]} />
           <path d="M 0 -266 Q 6 -150 0 -62 M -96 -254 Q -128 -160 -146 -66 M 96 -254 Q 128 -160 146 -66" fill="none" strokeWidth={4} opacity={0.7} />
-          <path d="M -246 -28 Q 0 -112 246 -28 Q 258 -6 226 6 Q 0 -56 -226 6 Q -258 -6 -246 -28 Z" fill="#202e63" />
-          <circle cx={0} cy={-272} r={14} fill="#2f4287" />
+          <path d="M -246 -28 Q 0 -112 246 -28 Q 258 -6 226 6 Q 0 -56 -226 6 Q -258 -6 -246 -28 Z" fill={cap[1]} />
+          <circle cx={0} cy={-272} r={14} fill={cap[1]} />
           <path d="M 36 -150 L 62 -196 L 80 -170 L 94 -186 L 120 -150 Z" fill="#fff" strokeWidth={4} />
           <path d="M 62 -196 L 62 -218 L 84 -210 L 62 -204" fill="#ff5a36" strokeWidth={3} />
         </g>
@@ -278,8 +331,8 @@ export const Mascot: React.FC<{
         {headFront}
       </g>
 
-      {left.front && <Arm from={[-205, 260 + droop]} hand={left} side={-1} />}
-      {right.front && <Arm from={[205, 260 + droop]} hand={right} side={1} />}
+      {left.front && <Arm from={[-205, 260 + droop]} hand={left} side={-1} sleeve={cap[0]} />}
+      {right.front && <Arm from={[205, 260 + droop]} hand={right} side={1} sleeve={cap[0]} />}
     </g>
   );
 };

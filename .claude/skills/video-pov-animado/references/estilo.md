@@ -40,13 +40,21 @@ Props principales: `mood`, `t` (cuadro global), `look` ([-1..1, -1..1], hacia d�
 - Animación automática: respiración, balanceo de cabeza, parpadeo cada 110 cuadros,
   temblor de línea, destello en la gorra.
 
+Más opciones del personaje: `mood: "wow"` (ojos abiertos, boca en "o"), mano
+`point: true` (señala con el índice), `cap={[copa, visera]}`, `suit`, `mustache` (para
+crear otros personajes, como el dueño de la tienda) y `light={{ color, op }}` (brillo de
+una pantalla en la cara). Si hay dos personajes en la misma escena, dale a cada uno un `id`.
+
 ## Objetos disponibles (en `PovVideo.tsx`)
 
 `Clock` (despertador que suena), `Barbell`, `Notebook` + `Pencil` (escribe líneas),
 `Trophy`, `Mug` (con vapor), `Window` (con luna y estrellas), `Lamp` (con cono de luz),
 `Confetti`, `Spot`, `FinalSticker`. Del arte orgánico (`art.tsx`): `Cloud`, `Mountains`,
 `Sparkle`, `Flock`, `LeafyTree`, `PineTree`, `Skyline`, `GrassTuft`, `LightShafts`.
-Todos con contorno oscuro grueso; los objetos nuevos deben seguirlo.
+En `ia/IaVideo.tsx`: `Laptop` (vista trasera con brillo), `HoloBot` (asistente de IA
+holográfico), `Card` (pantalla flotante: imagen, video, diseño, ebook, chat), `Bubble`
+(globo de diálogo), `Shop` (fachada de tienda), `AdPoster` (anuncio aburrido → anuncio
+con IA), `Icon`, `Rocket`. Todos con contorno oscuro grueso; los objetos nuevos deben seguirlo.
 
 ## Etiquetas sticker (`Tag`)
 

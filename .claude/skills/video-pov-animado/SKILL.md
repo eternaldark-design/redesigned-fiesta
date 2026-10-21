@@ -47,6 +47,26 @@ reinventar el estilo.
 7. **Guardar el trabajo:** haz commit y push a la rama de la sesión (los archivos sin
    versionar disparan el hook de cierre). `node_modules` y `out/` ya están en `.gitignore`.
 
+## Cuando el usuario trae su propio guion (con narrador y duración)
+
+Respeta sus escenas, tiempos y textos. `src/ia/IaVideo.tsx` es el ejemplo de 60 s:
+- `SCENES` lleva `from`/`dur` en cuadros y el texto del narrador; `buildChunks()` lo parte
+  en frases cortas y la barra superior las muestra como subtítulos tipo karaoke (la
+  palabra actual en amarillo), con el título del video en pequeño arriba.
+- Música a la medida: `python3 scripts/make_music.py public/music-x.wav --dur 60 --arp 8
+  --drums 18 --clap 24 --impact 43 --outro 55` (pon el impacto en el momento de la
+  transformación y el `--outro` en el cierre).
+- Registra la composición en `src/Root.tsx` y renderiza con
+  `npx remotion render <Id> out/<nombre>.mp4 --browser-executable=<headless_shell> --chrome-mode=headless-shell`
+  (60 s tardan ~3 min).
+- **Voz:** en el contenedor no hay voz sintética de calidad (los modelos de TTS están
+  bloqueados por el proxy). Entrega el video con subtítulos y música, y ofrece sincronizar
+  una grabación del usuario o usar la función "Texto a voz" de TikTok. No metas una voz
+  robótica sin preguntar.
+- Emojis del guion (🤖💰🚀): la fuente no los tiene; dibuja el objeto en SVG (hay un `Rocket`)
+  o quítalos del texto en pantalla.
+- Marcas mencionadas (ChatGPT, etc.): pueden ir en la narración, pero no dibujes sus logos.
+
 ## Reglas del formato (y por qué)
 
 - **1080x1920, 30 fps, 24 s.** Es el tamaño de TikTok; 24 s es la longitud que la música
@@ -59,7 +79,7 @@ reinventar el estilo.
   montaña con bandera, no el emblema de nadie.
 - **Trazo oscuro grueso, colores planos, grano y viñeta.** Es lo que da el aspecto de
   caricatura de "internet"; el personaje "hierve" (tiembla 1 px cada 3 cuadros) y parpadea.
-- **Una expresión por escena** (`tired`, `grit`, `effort`, `happy`) y una etiqueta sticker
+- **Una expresión por escena** (`tired`, `grit`, `effort`, `happy`, `wow`) y una etiqueta sticker
   que rebota al entrar. El cambio de escena es un corte con golpe de zoom y destello.
 - **Música original generada** (`make_music.py`, La menor épico, 120 BPM): intro suave,
   bombo desde el segundo 8, build-up 14–18 s, impacto en 18 s. Sincroniza el cambio
@@ -81,6 +101,7 @@ reinventar el estilo.
 
 ## Archivos
 
-- `assets/template/` - proyecto base (Mascot, escenas de ejemplo, arte orgánico, música).
+- `assets/template/` - proyecto base (Mascot, escenas de ejemplo de 24 s en `pov/`, ejemplo
+  de 60 s con narración en `ia/`, arte orgánico, música parametrizable).
 - `references/estilo.md` - guía visual detallada, expresiones, mapa de objetos y guiones de ejemplo.
 - `scripts/render.sh` - still / video con el Chromium correcto.
