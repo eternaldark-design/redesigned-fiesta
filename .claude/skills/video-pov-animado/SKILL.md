@@ -67,6 +67,16 @@ Respeta sus escenas, tiempos y textos. `src/ia/IaVideo.tsx` es el ejemplo de 60 
   o quítalos del texto en pantalla.
 - Marcas mencionadas (ChatGPT, etc.): pueden ir en la narración, pero no dibujes sus logos.
 
+## Zonas seguras de TikTok (revisar siempre)
+
+La interfaz de TikTok tapa: la columna de botones a la derecha (x > 940, y 880–1640), la
+descripción y el nombre abajo (y > 1580, x < 900) y la parte superior (y < 140). Antes del
+render final, pinta esas zonas en rojo sobre los stills y comprueba que ninguna cara,
+etiqueta, globo o texto quede debajo:
+```bash
+ffmpeg -y -i out/s.png -vf "drawbox=x=iw*0.87:y=ih*0.458:w=iw*0.13:h=ih*0.396:color=red@0.45:t=fill,drawbox=x=0:y=ih*0.823:w=iw*0.83:h=ih*0.177:color=red@0.45:t=fill" out/zonas.png
+```
+
 ## Reglas del formato (y por qué)
 
 - **1080x1920, 30 fps, 24 s.** Es el tamaño de TikTok; 24 s es la longitud que la música

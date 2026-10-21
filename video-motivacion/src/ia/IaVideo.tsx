@@ -442,9 +442,11 @@ const Scene3: React.FC<P> = ({ f, t }) => {
       <Shop t={t} />
       <rect y={470} width={1080} height={1450} fill="#1a1030" opacity={0.25} />
       <Spot color="#fff3c0" op={0.1} />
-      <AdPoster x={235} y={1110} f={f} t={t} at={150} />
+      <g transform={`translate(${10 * ownerIn} ${-150 * ownerIn}) scale(${1 - 0.12 * ownerIn})`}>
+        <AdPoster x={235} y={1110} f={f} t={t} at={150} />
+      </g>
       <Mascot
-        cx={CX - 40 * ownerIn}
+        cx={CX - 150 * ownerIn}
         cy={CY}
         s={S}
         mood={f < 150 ? "grit" : "happy"}
@@ -453,12 +455,12 @@ const Scene3: React.FC<P> = ({ f, t }) => {
         left={f < 230 ? { x: -270, y: -10, rot: -40, point: true } : { x: -290, y: 120, rot: -20 }}
         right={{ x: 250, y: 400, rot: -10 }}
       />
-      <g transform={`translate(${1260 - 330 * ownerIn} 0)`}>
+      <g transform={`translate(${1260 - 460 * ownerIn} 0)`}>
         <Mascot
           id="owner"
           cx={0}
-          cy={1600}
-          s={0.62}
+          cy={1450}
+          s={0.55}
           mood={happyOwner ? "happy" : "wow"}
           t={t + 50}
           cap={["#c0392b", "#8e2a20"]}
@@ -469,7 +471,7 @@ const Scene3: React.FC<P> = ({ f, t }) => {
           right={{ x: 230, y: 380, rot: 0 }}
         />
       </g>
-      {happyOwner && <Bubble x={780} y={1180} text="¡Me encanta!" f={f} delay={280} tail={1} size={46} />}
+      {happyOwner && <Bubble x={700} y={1150} text="¡Me encanta!" f={f} delay={280} tail={1} size={46} />}
       <Tag x={540} y={880} text="RESUELVE PROBLEMAS" color="#e8742a" f={f} delay={70} size={56} rot={-3} />
     </g>
   );
