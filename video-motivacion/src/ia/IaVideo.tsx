@@ -1,8 +1,8 @@
 import React from "react";
-import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { loadFont } from "@remotion/fonts";
 import { Mascot, OUT, Tag } from "../pov/Mascot";
-import { Confetti, Notebook, Pencil, Spot, Window, ol } from "../pov/PovVideo";
+import { Clock, Confetti, Notebook, Pencil, Spot, Trophy, Window, ol } from "../pov/PovVideo";
 import { Skyline, Sparkle, blobPath } from "../art";
 import { FONT, mod, ramp, rnd } from "../utils";
 
@@ -23,67 +23,61 @@ const pop = (f: number, delay: number, len = 10) => {
   return k === 0 ? 0 : 1 + Math.sin(k * Math.PI) * 0.2 - (1 - k) * 0.3;
 };
 
-// --- guion -------------------------------------------------------------------
+// --- guion: tiempos reales de la narración (voz-ia.mp3) -----------------------
+// Cada frase va de pausa a pausa (medidas con silencedetect y una transcripción local).
+const PHRASES: [number, number, string][] = [
+  [0.08, 6.22, "En 2026, la inteligencia artificial puede convertirse en tu mejor herramienta para ganar dinero."],
+  [6.61, 14.04, "Puedes crear anuncios publicitarios, videos, diseños y ebooks digitales sin necesidad de ser un experto en programación."],
+  [14.43, 14.95, "La clave:"],
+  [15.27, 18.77, "aprender a usar la IA para resolver problemas reales."],
+  [19.11, 21.49, "Busca negocios que necesiten mejores anuncios,"],
+  [21.74, 25.1, "crea una muestra de tu trabajo y ofrece tus servicios."],
+  [25.49, 27.25, "Al principio puede ser difícil."],
+  [27.57, 31.41, "Tendrás que practicar, mejorar y aprender a conseguir clientes."],
+  [31.73, 32.66, "Pero recuerda algo:"],
+  [33.03, 35.72, "la inteligencia artificial no hará todo por ti."],
+  [36.11, 40.63, "Tu creatividad, tus habilidades y tu disciplina marcarán la diferencia."],
+  [40.96, 42.98, "No esperes a tenerlo todo resuelto."],
+  [43.34, 45.79, "Aprende, crea y empieza hoy,"],
+  [46.13, 50.0, "porque dentro de seis meses puedes seguir esperando el momento perfecto,"],
+  [50.36, 52.64, "o tener seis meses de experiencia."],
+  [52.97, 57.1, "Sigue para descubrir más formas de aprender con inteligencia artificial."],
+];
+export const VOICE_END = 57.1;
+
+/** Escenas (en cuadros) cortadas en las pausas de la narración. */
 const SCENES = [
-  {
-    from: 0,
-    dur: 240,
-    text: "En 2026, ya no necesitas tener una empresa ni miles de dólares para empezar a construir un negocio. La inteligencia artificial está abriendo oportunidades que antes parecían imposibles.",
-  },
-  {
-    from: 240,
-    dur: 300,
-    text: "Con herramientas como ChatGPT y generadores de imágenes, puedes crear anuncios para negocios, videos para redes sociales y productos digitales que otras personas necesitan.",
-  },
-  {
-    from: 540,
-    dur: 360,
-    text: "¿La clave? No se trata de usar la IA por usarla. Se trata de resolver problemas. Busca negocios que necesiten mejores anuncios, crea una muestra de tu trabajo y ofréceles tus servicios.",
-  },
-  {
-    from: 900,
-    dur: 390,
-    text: "Al principio quizá nadie te contrate. Tendrás que practicar, mejorar y aprender a vender tus habilidades. Pero cada proyecto puede ayudarte a construir experiencia y abrir nuevas oportunidades.",
-  },
-  {
-    from: 1290,
-    dur: 360,
-    text: "Recuerda: la inteligencia artificial no hará el trabajo por ti. Pero si aprendes a utilizarla con inteligencia, creatividad y disciplina, puedes convertir una habilidad en una oportunidad de negocio.",
-  },
-  {
-    from: 1650,
-    dur: 150,
-    text: "No esperes a tenerlo todo. Aprende, crea y empieza hoy. Tu primera oportunidad podría estar a un proyecto de distancia.",
-  },
+  { from: 0, dur: 192 }, //     0.0–6.4  el despertar
+  { from: 192, dur: 234 }, //   6.4–14.2 el descubrimiento
+  { from: 426, dur: 333 }, //  14.2–25.3 la primera oportunidad
+  { from: 759, dur: 189 }, //  25.3–31.6 el trabajo constante
+  { from: 948, dur: 276 }, //  31.6–40.8 el mensaje
+  { from: 1224, dur: 159 }, // 40.8–46.1 no esperes
+  { from: 1383, dur: 204 }, // 46.1–52.9 seis meses
+  { from: 1587, dur: 213 }, // 52.9–60   cierre
 ];
 
-type Chunk = { from: number; to: number; words: string[] };
+type Word = { w: string; at: number };
+type Chunk = { from: number; to: number; words: Word[] };
 
-/** Parte la narración en frases cortas y les reparte el tiempo de la escena según su largo. */
+/** Reparte el tiempo de cada frase entre sus palabras según su largo, y la parte en grupos cortos. */
 const buildChunks = (): Chunk[] => {
   const out: Chunk[] = [];
-  for (const sc of SCENES) {
-    const words = sc.text.split(" ");
-    const groups: string[][] = [];
-    let cur: string[] = [];
-    for (const w of words) {
-      cur.push(w);
-      const end = /[.,?:]$/.test(w);
-      if (cur.length >= 7 || (end && cur.length >= 3)) {
-        groups.push(cur);
-        cur = [];
-      }
-    }
-    if (cur.length) groups.push(cur);
-    const weight = (g: string[]) => g.length + (/[.?]$/.test(g[g.length - 1]) ? 1.2 : 0.4);
-    const total = groups.reduce((a, g) => a + weight(g), 0);
-    const start = sc.from + 4;
-    const span = sc.dur - 8;
+  for (const [a, b, text] of PHRASES) {
+    const words = text.split(" ");
+    const total = words.reduce((acc, w) => acc + w.length + 1, 0);
     let acc = 0;
-    for (const g of groups) {
-      const a = start + (acc / total) * span;
-      acc += weight(g);
-      out.push({ from: a, to: start + (acc / total) * span, words: g });
+    const timed = words.map((w) => {
+      const at = (a + ((b - a) * acc) / total) * 30;
+      acc += w.length + 1;
+      return { w, at };
+    });
+    const n = Math.ceil(words.length / 7);
+    const per = Math.ceil(words.length / n);
+    for (let i = 0; i < words.length; i += per) {
+      const g = timed.slice(i, i + per);
+      const next = timed[i + per];
+      out.push({ from: g[0].at, to: next ? next.at : b * 30 + 8, words: g });
     }
   }
   return out;
@@ -391,7 +385,7 @@ const Scene1: React.FC<P> = ({ f, t }) => {
         light={{ color: CYAN, op: 0.55 * lit }}
       />
       <Laptop t={t} glow={lit} />
-      <Tag x={800} y={1110} text="2026" color="#2d6fd6" f={f} delay={70} size={80} />
+      <Tag x={800} y={1110} text="2026" color="#2d6fd6" f={f} delay={14} size={80} />
     </g>
   );
 };
@@ -414,45 +408,45 @@ const Scene2: React.FC<P> = ({ f, t }) => {
       {Array.from({ length: 10 }).map((_, i) => (
         <Sparkle key={i} x={80 + rnd(i) * 920} y={560 + rnd(i + 3) * 900} s={14} t={t} phase={i} />
       ))}
-      <Card x={190} y={720} kind="image" label="IMÁGENES" f={f} t={t} delay={30} rot={-6} />
-      <Card x={870} y={720} kind="video" label="VIDEOS" f={f} t={t} delay={80} rot={5} />
-      <Card x={175} y={1090} kind="design" label="ANUNCIOS" f={f} t={t} delay={130} rot={4} />
-      <Card x={870} y={1090} kind="ebook" label="EBOOKS" f={f} t={t} delay={180} rot={-4} />
+      <Card x={190} y={720} kind="image" label="ANUNCIOS" f={f} t={t} delay={31} rot={-6} />
+      <Card x={870} y={720} kind="video" label="VIDEOS" f={f} t={t} delay={76} rot={5} />
+      <Card x={175} y={1090} kind="design" label="DISEÑOS" f={f} t={t} delay={91} rot={4} />
+      <Card x={870} y={1090} kind="ebook" label="EBOOKS" f={f} t={t} delay={110} rot={-4} />
       <Mascot
         cx={CX}
         cy={CY}
         s={S}
-        mood={f < 120 ? "wow" : "happy"}
+        mood={f < 100 ? "wow" : "happy"}
         t={t}
         look={[Math.sin(f / 30) * 0.8, -0.5]}
         left={{ x: -300, y: 60 + Math.sin(f / 7) * 10, rot: -10 }}
         right={{ x: 300, y: 60 + Math.cos(f / 7) * 10, rot: 10 }}
         light={{ color: "#ff9bf0", op: 0.25 }}
       />
-      <Card x={540} y={600} kind="chat" label="CHAT CON IA" f={f} t={t} delay={10} />
+      <Card x={540} y={600} kind="chat" label="SIN PROGRAMAR" f={f} t={t} delay={141} />
     </g>
   );
 };
 
 const Scene3: React.FC<P> = ({ f, t }) => {
-  const ownerIn = ramp(f, 230, 260);
-  const happyOwner = f > 275;
+  const ownerIn = ramp(f, 240, 265);
+  const happyOwner = f > 280;
   return (
     <g>
       <Shop t={t} />
       <rect y={470} width={1080} height={1450} fill="#1a1030" opacity={0.25} />
       <Spot color="#fff3c0" op={0.1} />
       <g transform={`translate(${10 * ownerIn} ${-150 * ownerIn}) scale(${1 - 0.12 * ownerIn})`}>
-        <AdPoster x={235} y={1110} f={f} t={t} at={150} />
+        <AdPoster x={235} y={1110} f={f} t={t} at={215} />
       </g>
       <Mascot
         cx={CX - 150 * ownerIn}
         cy={CY}
         s={S}
-        mood={f < 150 ? "grit" : "happy"}
+        mood={f < 215 ? "grit" : "happy"}
         t={t}
-        look={f < 230 ? [-0.8, 0] : [0.8, 0]}
-        left={f < 230 ? { x: -270, y: -10, rot: -40, point: true } : { x: -290, y: 120, rot: -20 }}
+        look={f < 240 ? [-0.8, 0] : [0.8, 0]}
+        left={f < 240 ? { x: -270, y: -10, rot: -40, point: true } : { x: -290, y: 120, rot: -20 }}
         right={{ x: 250, y: 400, rot: -10 }}
       />
       <g transform={`translate(${1260 - 460 * ownerIn} 0)`}>
@@ -471,14 +465,14 @@ const Scene3: React.FC<P> = ({ f, t }) => {
           right={{ x: 230, y: 380, rot: 0 }}
         />
       </g>
-      {happyOwner && <Bubble x={700} y={1150} text="¡Me encanta!" f={f} delay={280} tail={1} size={46} />}
-      <Tag x={540} y={880} text="RESUELVE PROBLEMAS" color="#e8742a" f={f} delay={70} size={56} rot={-3} />
+      {happyOwner && <Bubble x={700} y={1150} text="¡Me encanta!" f={f} delay={282} tail={1} size={46} />}
+      <Tag x={540} y={880} text="RESUELVE PROBLEMAS" color="#e8742a" f={f} delay={99} size={56} rot={-3} />
     </g>
   );
 };
 
 const Scene4: React.FC<P> = ({ f, t }) => {
-  const phase = f < 120 ? 0 : f < 270 ? 1 : 2;
+  const phase = f < 66 ? 1 : f < 150 ? 0 : 2;
   const wx = Math.sin(f / 5) * 20;
   const wy = Math.cos(f / 3) * 7;
   return (
@@ -498,8 +492,8 @@ const Scene4: React.FC<P> = ({ f, t }) => {
             left={{ x: -190, y: 350, rot: -6, prop: <g transform="translate(30 -120)"><Notebook f={f} /></g> }}
             right={{ x: 150 + wx, y: 380 + wy, rot: 20, prop: <g transform="translate(0 6)"><Pencil /></g> }}
           />
-          <Tag x={260} y={880} text="PRACTICA" color="#2d6fd6" f={f} delay={6} />
-          <Tag x={760} y={1020} text="MEJORA" color="#2d9d4b" f={f} delay={50} size={70} rot={4} />
+          <Tag x={260} y={880} text="PRACTICA" color="#2d6fd6" f={f} delay={88} />
+          <Tag x={760} y={1020} text="MEJORA" color="#2d9d4b" f={f} delay={108} size={70} rot={4} />
         </>
       )}
       {phase === 1 && (
@@ -515,9 +509,9 @@ const Scene4: React.FC<P> = ({ f, t }) => {
             left={{ x: -230, y: 380, rot: 10 }}
             right={{ x: 240, y: 380, rot: -10 }}
           />
-          <Bubble x={300} y={700} text="¿Cuánto cobras?" f={f} delay={130} tail={1} />
-          <Bubble x={620} y={880} text="Lo voy a pensar..." f={f} delay={175} tail={-1} color="#e9e6ff" />
-          <Bubble x={330} y={1060} text="No, gracias" f={f} delay={220} tail={1} color="#ffd6d6" />
+          <Bubble x={300} y={700} text="¿Cuánto cobras?" f={f} delay={4} tail={1} />
+          <Bubble x={620} y={880} text="Lo voy a pensar..." f={f} delay={22} tail={-1} color="#e9e6ff" />
+          <Bubble x={330} y={1060} text="No, gracias" f={f} delay={40} tail={1} color="#ffd6d6" />
         </>
       )}
       {phase === 2 && (
@@ -532,9 +526,9 @@ const Scene4: React.FC<P> = ({ f, t }) => {
             left={{ x: -320, y: -80 + Math.sin(f / 4) * 14, rot: -14, fist: true }}
             right={{ x: 320, y: -80 + Math.cos(f / 4) * 14, rot: 14, fist: true }}
           />
-          <Bubble x={540} y={720} text="¡Te contrato!" f={f} delay={272} tail={1} color="#c7f5d9" size={58} />
-          <Tag x={540} y={930} text="PRIMER PROYECTO PAGADO" color="#2d9d4b" f={f} delay={290} size={50} rot={-3} />
-          <Confetti f={f - 270} />
+          <Bubble x={540} y={720} text="¡Te contrato!" f={f} delay={152} tail={1} color="#c7f5d9" size={58} />
+          <Tag x={540} y={930} text="¡PRIMER CLIENTE!" color="#2d9d4b" f={f} delay={164} size={64} rot={-3} />
+          <Confetti f={f - 150} />
         </>
       )}
     </g>
@@ -580,21 +574,22 @@ const Scene5: React.FC<P> = ({ f, t }) => {
         cx={CX}
         cy={CY}
         s={S}
-        mood={f < 120 ? "grit" : "happy"}
+        mood={f < 140 ? "grit" : "happy"}
         t={t}
         look={[0, -0.2]}
         left={{ x: -250, y: 380, rot: 10 }}
         right={{ x: 300, y: 60, rot: 10, fist: true }}
         light={{ color: "#ff6fae", op: 0.25 }}
       />
-      <Tag x={250} y={650} text="INTELIGENCIA" color="#2d6fd6" f={f} delay={185} size={52} rot={-5} />
-      <Tag x={760} y={760} text="CREATIVIDAD" color="#e8742a" f={f} delay={215} size={52} rot={4} />
-      <Tag x={300} y={880} text="DISCIPLINA" color="#2d9d4b" f={f} delay={245} size={52} rot={-3} />
+      {f < 136 && <Tag x={540} y={680} text="NO HARÁ TODO POR TI" color="#d6342c" f={f} delay={78} size={52} rot={-3} />}
+      <Tag x={250} y={650} text="HABILIDADES" color="#2d6fd6" f={f} delay={174} size={52} rot={-5} />
+      <Tag x={760} y={760} text="CREATIVIDAD" color="#e8742a" f={f} delay={141} size={52} rot={4} />
+      <Tag x={300} y={880} text="DISCIPLINA" color="#2d9d4b" f={f} delay={210} size={52} rot={-3} />
     </g>
   );
 };
 
-const Scene6: React.FC<P> = ({ f, t }) => (
+const Scene8: React.FC<P> = ({ f, t }) => (
   <g>
     <rect y={470} width={1080} height={1450} fill="#ffb347" />
     <g transform={`translate(${CX} ${CY}) rotate(${f * 0.5})`} opacity={0.3}>
@@ -637,27 +632,141 @@ const Scene6: React.FC<P> = ({ f, t }) => (
     <g transform={`translate(330 960) scale(${pop(f, 40, 12)})`}>
       <rect x={-290} y={-46} width={580} height={92} rx={46} fill={OUT} />
       <text y={-4} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={30} fill="#fff">
-        SÍGUEME PARA MÁS FORMAS
+        SÍGUEME PARA DESCUBRIR MÁS
       </text>
       <text y={32} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={30} fill="#ffd23f">
-        DE EMPRENDER CON IA
+        FORMAS DE APRENDER CON IA
       </text>
     </g>
     <Confetti f={f} />
   </g>
 );
 
-const SCENE_COMPONENTS: React.FC<P>[] = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6];
+const Scene6: React.FC<P> = ({ f, t }) => {
+  // "No esperes a tenerlo todo resuelto. Aprende, crea y empieza hoy"
+  const words: [string, string, number, number, number][] = [
+    ["APRENDE", "#ffffff", 78, 700, -6],
+    ["CREA", "#5ff3ff", 99, 830, 4],
+    ["EMPIEZA HOY", "#ffd23f", 126, 960, -3],
+  ];
+  return (
+    <g>
+      <rect y={470} width={1080} height={1450} fill={f < 74 ? "#2a2350" : "#ff8a5c"} />
+      <g transform={`translate(${CX} ${CY}) rotate(${f * 0.6})`} opacity={f < 74 ? 0.08 : 0.28}>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <path key={i} d="M0 0 L -70 -1300 L 70 -1300 Z" fill="#fff6c0" transform={`rotate(${i * 30})`} />
+        ))}
+      </g>
+      {f < 74 && (
+        <>
+          <Clock x={200} y={1180} s={1.2} ring t={t} />
+          <Tag x={540} y={720} text="NO ESPERES" color="#d6342c" f={f} delay={4} size={76} rot={-4} />
+        </>
+      )}
+      <Mascot
+        cx={CX}
+        cy={CY}
+        s={S}
+        mood={f < 74 ? "grit" : "happy"}
+        t={t}
+        look={[0, -0.3]}
+        left={f < 74 ? { x: -300, y: 40, rot: 10, fist: true } : { x: -320, y: -80 + Math.sin(f / 4) * 12, rot: -14, fist: true }}
+        right={f < 74 ? { x: 250, y: 400, rot: -10 } : { x: 320, y: -80 + Math.cos(f / 4) * 12, rot: 14, fist: true }}
+      />
+      {words.map(([w, c, d, y, r]) => (
+        <g key={w} transform={`translate(540 ${y}) rotate(${r}) scale(${pop(f, d, 10)})`}>
+          <text
+            textAnchor="middle"
+            fontFamily={FONT}
+            fontWeight={900}
+            fontSize={w.length > 6 ? 104 : 120}
+            fill={c}
+            stroke={OUT}
+            strokeWidth={18}
+            paintOrder="stroke"
+            strokeLinejoin="round"
+          >
+            {w}
+          </text>
+        </g>
+      ))}
+    </g>
+  );
+};
+
+const Scene7: React.FC<P> = ({ f, t }) => {
+  // "porque dentro de seis meses puedes seguir esperando el momento perfecto, o tener seis meses de experiencia"
+  const right = ramp(f, 126, 136);
+  return (
+    <g>
+      <rect x={0} y={470} width={540} height={1450} fill="#3a3f52" />
+      <rect x={540} y={470} width={540} height={1450} fill="#1f6a54" />
+      <rect x={540} y={470} width={540} height={1450} fill="#2dc26b" opacity={0.35 * right} />
+      <g transform={`translate(810 1300) rotate(${f * 0.6})`} opacity={0.2 * right}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <path key={i} d="M0 0 L -50 -900 L 50 -900 Z" fill="#fff6c0" transform={`rotate(${i * 36})`} />
+        ))}
+      </g>
+      {/* izquierda: sigue esperando */}
+      <g opacity={ramp(f, 30, 40)}>
+        <Mascot
+          id="espera"
+          cx={270}
+          cy={1360}
+          s={0.62}
+          mood="tired"
+          t={t}
+          droop={30}
+          look={[0.3, 0.6]}
+          left={{ x: -220, y: 400, rot: 10 }}
+          right={{ x: 220, y: 400, rot: -10 }}
+        />
+        <g transform="translate(150 980) scale(0.7)">
+          <Clock x={0} y={0} t={t} />
+        </g>
+        <Tag x={270} y={760} text="ESPERANDO..." color="#6b6f80" f={f} delay={40} size={54} rot={-4} />
+      </g>
+      {/* derecha: seis meses de experiencia */}
+      <g opacity={right}>
+        <Mascot
+          id="exito"
+          cx={790}
+          cy={1360}
+          s={0.62}
+          mood="happy"
+          t={t}
+          look={[0, -0.2]}
+          left={{ x: -260, y: -60 + Math.sin(f / 4) * 10, rot: -14, fist: true }}
+          right={{ x: 280, y: -120, rot: 12, prop: <Trophy t={t} /> }}
+        />
+        <Tag x={790} y={760} text="EXPERIENCIA" color="#2d9d4b" f={f} delay={130} size={54} rot={4} />
+      </g>
+      <g transform={`translate(540 620) scale(${pop(f, 8, 12)}) rotate(-2)`}>
+        <rect x={-320} y={-60} width={640} height={124} rx={20} fill="#fff" {...ol} />
+        <rect x={-320} y={-60} width={640} height={34} rx={14} fill="#e0453a" {...ol} />
+        <text y={44} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={56} fill={OUT}>
+          6 MESES DESPUÉS
+        </text>
+      </g>
+      <line x1={540} y1={720} x2={540} y2={1920} stroke={OUT} strokeWidth={10} />
+      <g transform={`translate(540 1180) scale(${pop(f, 120, 10)})`}>
+        <circle r={58} fill="#ffd23f" {...ol} />
+        <text y={20} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={52} fill={OUT}>
+          VS
+        </text>
+      </g>
+    </g>
+  );
+};
+
+const SCENE_COMPONENTS: React.FC<P>[] = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6, Scene7, Scene8];
 
 // --- marco: barra superior con subtítulos tipo karaoke ------------------------
 const Subtitles: React.FC = () => {
   const g = useCurrentFrame();
-  const c = CHUNKS.find((ch) => g >= ch.from && g < ch.to) ?? CHUNKS.filter((ch) => ch.from <= g).pop();
+  const c = CHUNKS.find((ch) => g >= ch.from && g < ch.to);
   if (!c) return null;
-  const local = g - c.from;
-  const prog = (g - c.from) / (c.to - c.from);
-  const active = Math.min(c.words.length - 1, Math.floor(prog * c.words.length));
-  const enter = Math.min(1, local / 5);
+  const enter = Math.min(1, (g - c.from) / 4);
   return (
     <div
       style={{
@@ -671,18 +780,22 @@ const Subtitles: React.FC = () => {
         transform: `translateY(${(1 - enter) * 16}px)`,
       }}
     >
-      {c.words.map((w, i) => (
-        <span
-          key={i}
-          style={{
-            display: "inline-block",
-            marginRight: 16,
-            color: i === active ? "#ffd23f" : i < active ? "#fff" : "rgba(255,255,255,0.75)",
-          }}
-        >
-          {w}
-        </span>
-      ))}
+      {c.words.map((w, i) => {
+        const said = g >= w.at;
+        const current = said && (i === c.words.length - 1 || g < c.words[i + 1].at);
+        return (
+          <span
+            key={i}
+            style={{
+              display: "inline-block",
+              marginRight: 16,
+              color: current ? "#ffd23f" : said ? "#fff" : "rgba(255,255,255,0.7)",
+            }}
+          >
+            {w.w}
+          </span>
+        );
+      })}
     </div>
   );
 };
@@ -742,7 +855,11 @@ const SceneFrame: React.FC<{ from: number; C: React.FC<P> }> = ({ from, C }) => 
 export const IaVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <Audio src={staticFile("music-ia.wav")} />
+      <Audio
+        src={staticFile("music-ia.wav")}
+        volume={(fr) => interpolate(fr, [0, VOICE_END * 30, VOICE_END * 30 + 15], [0.2, 0.2, 0.55], { extrapolateRight: "clamp" })}
+      />
+      <Audio src={staticFile("voz-ia.mp3")} />
       {SCENES.map((sc, i) => (
         <Sequence key={i} from={sc.from} durationInFrames={sc.dur}>
           <SceneFrame from={sc.from} C={SCENE_COMPONENTS[i]} />

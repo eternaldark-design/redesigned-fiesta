@@ -59,6 +59,15 @@ Respeta sus escenas, tiempos y textos. `src/ia/IaVideo.tsx` es el ejemplo de 60 
 - Registra la composición en `src/Root.tsx` y renderiza con
   `npx remotion render <Id> out/<nombre>.mp4 --browser-executable=<headless_shell> --chrome-mode=headless-shell`
   (60 s tardan ~3 min).
+- **Si el usuario sube su narración (MP3 de ElevenLabs, grabación):** el audio manda.
+  1. `ffmpeg -i voz.mp3 -af silencedetect=noise=-35dB:d=0.25 -f null -` da las pausas.
+  2. Transcribe para saber qué dice de verdad (suele diferir del guion escrito): el
+     paquete npm `sts-whisper-tiny` trae Whisper tiny en ONNX y funciona sin internet con
+     `@huggingface/transformers` (`env.localModelPath` a su carpeta `models/`,
+     `allowRemoteModels = false`, audio a 16 kHz f32 con ffmpeg). Corrige a mano sus errores.
+  3. Escribe `PHRASES` (inicio, fin, texto) de pausa a pausa, corta las escenas en esas
+     pausas y sincroniza etiquetas y objetos con el segundo en que se dice cada palabra.
+  4. Música por debajo de la voz (volumen ~0.2) y que suba cuando la voz termina.
 - **Voz:** en el contenedor no hay voz sintética de calidad (los modelos de TTS están
   bloqueados por el proxy). Entrega el video con subtítulos y música, y ofrece sincronizar
   una grabación del usuario o usar la función "Texto a voz" de TikTok. No metas una voz
