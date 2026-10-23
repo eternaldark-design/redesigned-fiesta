@@ -13,12 +13,12 @@ loadFont({
 });
 
 export const IA_FRAMES = 1800; // 60 s
-const CX = 620;
-const CY = 1390;
-const S = 1.15;
-const CYAN = "#5ff3ff";
+export const CX = 620;
+export const CY = 1390;
+export const S = 1.15;
+export const CYAN = "#5ff3ff";
 
-const pop = (f: number, delay: number, len = 10) => {
+export const pop = (f: number, delay: number, len = 10) => {
   const k = Math.max(0, Math.min(1, (f - delay) / len));
   return k === 0 ? 0 : 1 + Math.sin(k * Math.PI) * 0.2 - (1 - k) * 0.3;
 };
@@ -58,12 +58,12 @@ const SCENES = [
 ];
 
 type Word = { w: string; at: number };
-type Chunk = { from: number; to: number; words: Word[] };
+export type Chunk = { from: number; to: number; words: Word[] };
 
 /** Reparte el tiempo de cada frase entre sus palabras según su largo, y la parte en grupos cortos. */
-const buildChunks = (): Chunk[] => {
+export const buildChunks = (phrases: [number, number, string][]): Chunk[] => {
   const out: Chunk[] = [];
-  for (const [a, b, text] of PHRASES) {
+  for (const [a, b, text] of phrases) {
     const words = text.split(" ");
     const total = words.reduce((acc, w) => acc + w.length + 1, 0);
     let acc = 0;
@@ -82,10 +82,10 @@ const buildChunks = (): Chunk[] => {
   }
   return out;
 };
-const CHUNKS = buildChunks();
+const CHUNKS = buildChunks(PHRASES);
 
 // --- utilería nueva ----------------------------------------------------------
-const Laptop: React.FC<{ t: number; glow?: number }> = ({ t, glow = 1 }) => (
+export const Laptop: React.FC<{ t: number; glow?: number }> = ({ t, glow = 1 }) => (
   <g>
     <path d="M 330 1560 L 910 1560 L 960 1930 L 280 1930 Z" fill={CYAN} opacity={0.12 * glow} />
     <rect x={300} y={1580} width={640} height={380} rx={26} fill="#2b2f45" {...ol} strokeWidth={8} />
@@ -97,7 +97,7 @@ const Laptop: React.FC<{ t: number; glow?: number }> = ({ t, glow = 1 }) => (
 );
 
 /** Asistente de IA holográfico: cabeza de robot amable que flota y brilla. */
-const HoloBot: React.FC<{ x: number; y: number; f: number; t: number; delay?: number }> = ({ x, y, f, t, delay = 20 }) => {
+export const HoloBot: React.FC<{ x: number; y: number; f: number; t: number; delay?: number }> = ({ x, y, f, t, delay = 20 }) => {
   const k = pop(f, delay, 14);
   return (
     <g transform={`translate(${x} ${y + Math.sin(t / 14) * 12}) scale(${k})`}>
@@ -175,7 +175,7 @@ const CardContent: React.FC<{ kind: CardKind; t: number }> = ({ kind, t }) => {
 };
 
 /** Pantalla flotante (proyecto digital) con su etiqueta. */
-const Card: React.FC<{ x: number; y: number; kind: CardKind; label: string; f: number; t: number; delay: number; rot?: number }> = ({
+export const Card: React.FC<{ x: number; y: number; kind: CardKind; label: string; f: number; t: number; delay: number; rot?: number }> = ({
   x,
   y,
   kind,
@@ -204,7 +204,7 @@ const Card: React.FC<{ x: number; y: number; kind: CardKind; label: string; f: n
   </g>
 );
 
-const Bubble: React.FC<{ x: number; y: number; text: string; f: number; delay: number; color?: string; tail?: -1 | 1; size?: number }> = ({
+export const Bubble: React.FC<{ x: number; y: number; text: string; f: number; delay: number; color?: string; tail?: -1 | 1; size?: number }> = ({
   x,
   y,
   text,
@@ -227,7 +227,7 @@ const Bubble: React.FC<{ x: number; y: number; text: string; f: number; delay: n
   );
 };
 
-const Shop: React.FC<{ t: number }> = ({ t }) => (
+export const Shop: React.FC<{ t: number }> = ({ t }) => (
   <g>
     <rect x={40} y={560} width={1000} height={1400} fill="#c9b49a" {...ol} />
     {Array.from({ length: 14 }).map((_, r) =>
@@ -269,7 +269,7 @@ const Shop: React.FC<{ t: number }> = ({ t }) => (
 );
 
 /** Anuncio: versión aburrida → versión creada con IA (cambia con un destello). */
-const AdPoster: React.FC<{ x: number; y: number; f: number; t: number; at: number }> = ({ x, y, f, t, at }) => {
+export const AdPoster: React.FC<{ x: number; y: number; f: number; t: number; at: number }> = ({ x, y, f, t, at }) => {
   const k = ramp(f, at, at + 14);
   const s = 1 + Math.sin(Math.min(1, Math.max(0, (f - at) / 14)) * Math.PI) * 0.12;
   return (
@@ -319,7 +319,7 @@ const AdPoster: React.FC<{ x: number; y: number; f: number; t: number; at: numbe
   );
 };
 
-const Icon: React.FC<{ kind: "play" | "pen" | "monitor" | "image" | "book"; s?: number }> = ({ kind, s = 1 }) => (
+export const Icon: React.FC<{ kind: "play" | "pen" | "monitor" | "image" | "book"; s?: number }> = ({ kind, s = 1 }) => (
   <g transform={`scale(${s})`}>
     <circle r={62} fill="rgba(255,255,255,0.12)" stroke={CYAN} strokeWidth={5} />
     <g {...ol} strokeWidth={5}>
@@ -342,7 +342,7 @@ const Icon: React.FC<{ kind: "play" | "pen" | "monitor" | "image" | "book"; s?: 
   </g>
 );
 
-const Rocket: React.FC<{ t: number }> = ({ t }) => (
+export const Rocket: React.FC<{ t: number }> = ({ t }) => (
   <g transform={`rotate(35) translate(0 ${Math.sin(t / 5) * 4})`}>
     {[0, 1, 2].map((i) => (
       <path
@@ -362,7 +362,7 @@ const Rocket: React.FC<{ t: number }> = ({ t }) => (
 );
 
 // --- escenas -----------------------------------------------------------------
-type P = { f: number; t: number };
+export type P = { f: number; t: number };
 
 const Scene1: React.FC<P> = ({ f, t }) => {
   const lit = ramp(f, 20, 50);
@@ -762,9 +762,9 @@ const Scene7: React.FC<P> = ({ f, t }) => {
 const SCENE_COMPONENTS: React.FC<P>[] = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6, Scene7, Scene8];
 
 // --- marco: barra superior con subtítulos tipo karaoke ------------------------
-const Subtitles: React.FC = () => {
+const Subtitles: React.FC<{ chunks: Chunk[] }> = ({ chunks }) => {
   const g = useCurrentFrame();
-  const c = CHUNKS.find((ch) => g >= ch.from && g < ch.to);
+  const c = chunks.find((ch) => g >= ch.from && g < ch.to);
   if (!c) return null;
   const enter = Math.min(1, (g - c.from) / 4);
   return (
@@ -800,7 +800,7 @@ const Subtitles: React.FC = () => {
   );
 };
 
-const TopBar: React.FC = () => (
+export const TopBar: React.FC<{ title: string; chunks: Chunk[] }> = ({ title, chunks }) => (
   <div
     style={{
       position: "absolute",
@@ -818,15 +818,15 @@ const TopBar: React.FC = () => (
     }}
   >
     <div style={{ fontFamily: FONT, fontWeight: 900, fontSize: 30, letterSpacing: 3, color: "#ffd23f" }}>
-      CÓMO GANAR DINERO CON IA
+      {title}
     </div>
     <div style={{ height: 230, display: "flex", alignItems: "center" }}>
-      <Subtitles />
+      <Subtitles chunks={chunks} />
     </div>
   </div>
 );
 
-const SceneFrame: React.FC<{ from: number; C: React.FC<P> }> = ({ from, C }) => {
+export const SceneFrame: React.FC<{ from: number; C: React.FC<P> }> = ({ from, C }) => {
   const f = useCurrentFrame();
   const punch = 1 + 0.06 * (1 - ramp(f, 0, 8));
   const flash = 1 - ramp(f, 0, 4);
@@ -865,7 +865,7 @@ export const IaVideo: React.FC = () => {
           <SceneFrame from={sc.from} C={SCENE_COMPONENTS[i]} />
         </Sequence>
       ))}
-      <TopBar />
+      <TopBar title="CÓMO GANAR DINERO CON IA" chunks={CHUNKS} />
     </AbsoluteFill>
   );
 };
