@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=1080">
+<title>Día 1: De la idea a la primera venta</title>
+<style>
+html,body{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden}
+body{background:#0E1116;font-family:'Inter','Liberation Sans','DejaVu Sans',Arial,sans-serif;position:relative}
+#prog{position:absolute;top:84px;left:150px;width:780px;display:flex;gap:14px}
+#prog div{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden}
+#prog i{display:block;height:100%;width:0;background:#FFD60A}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#tag{position:absolute;top:150px;left:0;width:1080px;text-align:center}
+#tag span{display:inline-flex;align-items:center;gap:18px;padding:18px 46px;border-radius:999px;border:3px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff;font-size:44px;font-weight:700;letter-spacing:1px}
+#tag i{width:16px;height:16px;border-radius:50%;background:#FFD60A;display:block}
+#icon{position:absolute;left:190px;top:290px;overflow:visible}
+#sub{position:absolute;left:80px;width:920px;top:1060px;height:600px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:800;font-size:98px;line-height:1.15;z-index:5}
+.k{color:#FFD60A}
+#final{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#14161b;font-weight:800}
+#final .fl{padding:0 90px;font-size:88px;line-height:1.2;margin:26px 0;opacity:0}
+#final .fl.big{font-size:200px;line-height:1.05;margin-bottom:50px}
+.mk{background:linear-gradient(#FFD60A,#FFD60A) no-repeat left center;background-size:0% 100%;padding:0 .14em;border-radius:.14em;color:#14161b;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+</style></head>
+<body>
+<div id="prog"></div>
+<div id="stage">
+  <div id="tag"><span><i></i><b id="tagText"></b></span></div>
+  <svg id="icon" viewBox="0 0 700 700" width="700" height="700" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="clip1"><rect x="120" y="40" width="460" height="620" rx="36"/></clipPath>
+      <clipPath id="clip2"><ellipse cx="350" cy="320" rx="188" ry="268"/></clipPath>
+      <clipPath id="clip3"><rect x="-200" y="-300" width="1100" height="940"/></clipPath>
+      <linearGradient id="fadeBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1116" stop-opacity="0"/><stop offset="1" stop-color="#0E1116" stop-opacity="1"/></linearGradient>
+      <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d4259"/><stop offset="1" stop-color="#121b26"/></linearGradient>
+    </defs>
+    <g id="ic0"></g><g id="ic1"></g><g id="ic2"></g><g id="ic3"></g>
+  </svg>
+  <div id="sub"><div id="subIn"></div></div>
+</div>
+<div id="final"><div class="fl big" id="f0"></div><div class="fl" id="f1"></div><div class="fl" id="f2"></div></div>
+
+<script>
+window.CFG = {"fps": 30, "parts": [{"name": "Gancho", "chunks": ["Hoy es el [[Día 1]].", "Y sí, sé que muchos negocios online", "mueren antes de vender algo.", "No porque el producto sea malo,", "sino porque el dueño se pasa seis meses", "\"[[investigando el mercado]]\" desde el sofá,", "con una taza de café que ya se enfrió."], "dur": 15}, {"name": "Contexto", "chunks": ["Ese era yo.", "Tenía una idea, tiempo libre", "y una lista infinita de excusas.", "Quería vender por internet,", "pero no sabía qué vender, a quién", "ni cuánto invertir.", "Investigué tantos videos sobre cómo empezar", "que me abrumé de lo que sabía,", "y todavía no había vendido ni un chicle."], "dur": 17}, {"name": "Punto de quiebre", "chunks": ["Hasta que un día me miré al espejo y pensé:", "\"Ok, ya eres el gurú de la planificación.", "Ahora falta lo difícil: [[lanzar algo]]\".", "Hoy me puse una meta sencilla:", "[[una página, un producto y un presupuesto pequeño]].", "Y claro, el primer intento fue un desastre.", "Un anuncio no salió, un enlace estaba roto", "y una compra no apareció en ningún lado.", "Mi orgullo recibió un golpe,", "pero mi aprendizaje dio un salto enorme."], "dur": 25}, {"name": "Solución", "chunks": ["Así que hoy empiezo,", "ajusto lo que no funciona", "y mañana vuelvo a contarte cómo va.", "No necesito ser perfecto,", "solo necesito [[no rendirme]].", "Y cuando llegue la [[primera venta]],", "voy a gritar como si hubiera ganado la lotería.", "Bueno, no será la lotería,", "pero para mí valdrá más."], "dur": 17}], "final": ["[[Día 1]].", "Empiezo con miedo y poco presupuesto.", "Nos vemos mañana, [[Día 2]]."], "finalDur": 6};
+</script>
+<script>
+(function(){
+const C=window.CFG, FPS=C.fps;
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const eio=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const eob=x=>{x=clamp(x);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const mix=(a,b,t)=>{const A=hex(a),B=hex(b);return 'rgb('+A.map((v,i)=>Math.round(lerp(v,B[i],t))).join(',')+')'};
+const rnd=i=>{const s=Math.sin(i*12.9898+78.233)*43758.5453;return s-Math.floor(s)};
+const DARK='#0E1116', LIGHT='#F7F1E1';
+
+// ---- timeline
+const P=C.parts, starts=[]; let acc=0;
+P.forEach(p=>{starts.push(acc);acc+=p.dur;});
+const finalStart=acc, total=acc+C.finalDur;
+const W0=0.8, W1End=0.6;
+const plain=s=>s.replace(/\[\[|\]\]/g,'');
+const html=s=>s.replace(/\[\[(.+?)\]\]/g,'<span class="k">$1</span>');
+P.forEach(p=>{
+  const w=p.chunks.map(c=>plain(c).length+10), sum=w.reduce((a,b)=>a+b,0), span=p.dur-W0-W1End;
+  p.bounds=[]; let a=W0; w.forEach(x=>{p.bounds.push(a); a+=span*x/sum;});
+});
+window.TIMELINE={starts,finalStart,total,parts:P.map(p=>({name:p.name,dur:p.dur,bounds:p.bounds,chunks:p.chunks}))};
+
+// ---- progress bar
+$('prog').innerHTML=P.map(()=>'<div><i></i></div>').join('');
+const progFill=[...document.querySelectorAll('#prog i')];
+
+// ---- final screen
+C.final.forEach((l,i)=>{$('f'+i).innerHTML=l.replace(/\[\[(.+?)\]\]/g,'<span class="mk">$1</span>');});
+
+// ---- icon 0: coffee
+$('ic0').innerHTML=`
+<g id="cof">
+ <ellipse cx="350" cy="590" rx="215" ry="38" fill="#2a303b"/>
+ <ellipse cx="350" cy="580" rx="190" ry="30" fill="#3a4150"/>
+ <path d="M505 385 C615 375 625 525 498 505" fill="none" stroke="#F3E9DC" stroke-width="30" stroke-linecap="round" id="handle"/>
+ <path id="cupbody" d="M195 345 H505 V455 Q505 580 350 580 Q195 580 195 455 Z" fill="#F3E9DC"/>
+ <ellipse id="rim" cx="350" cy="345" rx="155" ry="30" fill="#F3E9DC"/>
+ <ellipse id="coffee" cx="350" cy="347" rx="136" ry="22" fill="#5b3a21"/>
+ <path d="M232 445 Q236 525 304 552" stroke="#fff" stroke-opacity=".5" stroke-width="12" fill="none" stroke-linecap="round"/>
+ <path id="st0" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+ <path id="st1" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+ <path id="st2" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</g>`;
+function steam(x0,ph,h){let d='';for(let k=0;k<=20;k++){const y=315-h*k/20, x=x0+20*Math.sin(k*.55+ph)*(.35+k/20);d+=(k?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}return d;}
+function icon0(lt,dur,t){
+  const heat=1-.93*eio(lt/dur);
+  const pop=.6+.4*eob((lt-.1)/.8);
+  $('cof').setAttribute('transform',`translate(0 ${(Math.sin(t*2)*6).toFixed(2)}) translate(350 400) scale(${pop.toFixed(3)}) translate(-350 -400)`);
+  [[270,0,1.0],[350,2,1.25],[430,4,.9]].forEach(([x,ph,s],i)=>{
+    const e=$('st'+i); e.setAttribute('d',steam(x,ph+t*2.6,(30+170*heat)*s));
+    e.setAttribute('stroke-opacity',(.78*heat*clamp(lt/.6)).toFixed(3));
+  });
+  const cold=eio(lt/dur);
+  $('coffee').setAttribute('fill',mix('#5b3a21','#4d6075',cold));
+  $('cupbody').setAttribute('fill',mix('#F3E9DC','#CFE0F0',cold));
+  $('rim').setAttribute('fill',mix('#F3E9DC','#CFE0F0',cold));
+  $('handle').setAttribute('stroke',mix('#F3E9DC','#CFE0F0',cold));
+}
+
+// ---- icon 1: excuse list
+const BARS=[250,200,270,180,240,220,260,190,230,210];
+let rows='';
+for(let i=0;i<10;i++){const y=170+i*100;
+  rows+=`<g id="r${i}"><rect x="160" y="${y}" width="46" height="46" rx="10" fill="none" stroke="#14161b" stroke-width="6"/>
+  <path id="x${i}" d="M170 ${y+10} L196 ${y+36} M196 ${y+10} L170 ${y+36}" stroke="#E5484D" stroke-width="7" stroke-linecap="round" fill="none" stroke-dasharray="80"/>
+  <line id="b${i}" x1="236" y1="${y+23}" x2="236" y2="${y+23}" stroke="#7d8696" stroke-width="18" stroke-linecap="round"/></g>`;}
+$('ic1').innerHTML=`
+<g clip-path="url(#clip1)"><g id="pad">
+  <rect x="120" y="40" width="460" height="1500" fill="#F6F2E8"/>
+  <rect x="120" y="40" width="460" height="92" fill="#FFD60A"/>
+  <circle cx="200" cy="86" r="14" fill="#14161b"/><circle cx="350" cy="86" r="14" fill="#14161b"/><circle cx="500" cy="86" r="14" fill="#14161b"/>
+  ${rows}
+</g></g>
+<rect x="110" y="520" width="480" height="150" fill="url(#fadeBot)"/>`;
+function icon1(lt,dur,t){
+  const step=(dur-2.5)/9, shown=(lt-.8)/step;
+  const pop=eo(lt/.6);
+  const sc=Math.max(0,Math.min(480,(shown-4.6)*100));
+  $('pad').setAttribute('transform',`translate(0 ${(-sc).toFixed(1)})`);
+  $('ic1').setAttribute('transform',`translate(0 ${((1-pop)*40).toFixed(1)})`);
+  $('ic1').setAttribute('opacity',pop.toFixed(3));
+  for(let i=0;i<10;i++){
+    const a=clamp(shown-i), c=clamp((shown-i-.8)/.5);
+    const e=$('b'+i); e.setAttribute('x2',(236+BARS[i]*eo(a)).toFixed(1)); e.setAttribute('opacity',clamp(a*4));
+    $('r'+i).setAttribute('opacity',clamp(a*6));
+    $('x'+i).setAttribute('stroke-dashoffset',(80*(1-eo(c))).toFixed(1));
+  }
+}
+
+// ---- icon 2: mirror
+$('ic2').innerHTML=`
+<g id="mir">
+ <path d="M350 600 L255 690 M350 600 L445 690" stroke="#B88A2E" stroke-width="24" stroke-linecap="round"/>
+ <ellipse cx="350" cy="320" rx="212" ry="292" fill="#E0B84C"/>
+ <ellipse cx="350" cy="320" rx="188" ry="268" fill="url(#glass)"/>
+ <g clip-path="url(#clip2)">
+  <circle cx="350" cy="290" r="64" fill="#9fb2c7"/>
+  <ellipse cx="350" cy="505" rx="145" ry="125" fill="#9fb2c7"/>
+  <g id="rays" stroke="#FFD60A" stroke-width="10" stroke-linecap="round"></g>
+  <polygon id="shine" fill="#fff" fill-opacity=".2"/>
+  <polyline id="crack" points="418,70 382,170 412,250 336,345 372,430 322,520 340,600" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+ </g>
+</g>`;
+(function(){let r='';for(let i=0;i<7;i++){const a=(-160+i*20)*Math.PI/180;
+  r+=`<line x1="${350+88*Math.cos(a)}" y1="${290+88*Math.sin(a)}" x2="${350+128*Math.cos(a)}" y2="${290+128*Math.sin(a)}"/>`;}
+  $('rays').innerHTML=r;})();
+const crackLen=1000;
+function icon2(lt,dur,t){
+  const f=lt/dur, pop=eob((lt-.1)/.8);
+  let rot=Math.sin(t*1.4)*1.6;
+  const shake=clamp((f-.62)/.08); if(shake>0&&shake<1) rot+=Math.sin(lt*60)*3*(1-shake);
+  $('mir').setAttribute('transform',`translate(350 600) rotate(${rot.toFixed(2)}) scale(${(.6+.4*pop).toFixed(3)}) translate(-350 -600)`);
+  const ph=((lt-1.0)%5)/2.2;
+  const x=-260+eio(ph)*900;
+  $('shine').setAttribute('points',`${x},40 ${x+90},40 ${x-60},620 ${x-150},620`);
+  $('shine').setAttribute('fill-opacity',ph>=0&&ph<=1?.22:0);
+  const rv=clamp((f-.42)/.06)*(.65+.35*Math.sin(t*6));
+  $('rays').setAttribute('opacity',rv.toFixed(3));
+  const cp=eo((f-.62)/.1);
+  $('crack').setAttribute('stroke-dasharray',crackLen);
+  $('crack').setAttribute('stroke-dashoffset',(crackLen*(1-cp)).toFixed(1));
+  $('crack').setAttribute('opacity',cp>0?1:0);
+}
+
+// ---- icon 3: flag
+const CONF=['#FFD60A','#FFFFFF','#FF6B6B','#4DD4AC'];
+$('ic3').innerHTML=`
+<g transform="translate(-30 0)">
+ <ellipse cx="210" cy="652" rx="95" ry="20" fill="#2a303b"/>
+ <rect x="200" y="110" width="20" height="545" rx="10" fill="#D5DBE6"/>
+ <circle cx="210" cy="100" r="22" fill="#FFD60A"/>
+ <g clip-path="url(#clip3)"><g id="flagcells"></g></g>
+</g>
+<g id="confetti"></g>`;
+function icon3(lt,dur,t){
+  const rise=(1-eio((lt-.3)/1.8))*420, amp=14;
+  const o=x=>amp*Math.sin((x-220)/55-t*5)*((x-220)/432);
+  let s='';
+  for(let r=0;r<8;r++)for(let c=0;c<12;c++){
+    const x0=220+c*36,x1=x0+36,y0=130+rise+r*36,y1=y0+36;
+    s+=`<polygon points="${x0},${(y0+o(x0)).toFixed(1)} ${x1},${(y0+o(x1)).toFixed(1)} ${x1},${(y1+o(x1)).toFixed(1)} ${x0},${(y1+o(x0)).toFixed(1)}" fill="${(r+c)%2?'#FFD60A':'#FFFFFF'}" stroke="${(r+c)%2?'#FFD60A':'#FFFFFF'}" stroke-width="0.6"/>`;
+  }
+  // clip flag to the pole's visible length (hide below base)
+  $('flagcells').innerHTML=s;
+  const cs=dur*.58, ct=lt-cs; let cf='';
+  if(ct>0){for(let i=0;i<44;i++){
+    const ang=-Math.PI/2+(rnd(i)-.5)*2.6, sp=260+320*rnd(i+99);
+    const x=420+Math.cos(ang)*sp*ct, y=200+Math.sin(ang)*sp*ct+520*ct*ct;
+    const op=clamp(1-(ct-1.4)/1.0), sz=12+14*rnd(i+7), rot=ct*(200+400*rnd(i+3));
+    if(op>0) cf+=`<rect x="${(-sz/2).toFixed(1)}" y="${(-sz/4).toFixed(1)}" width="${sz.toFixed(1)}" height="${(sz/2).toFixed(1)}" fill="${CONF[i%4]}" opacity="${op.toFixed(2)}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(0)})"/>`;
+  }}
+  $('confetti').innerHTML=cf;
+}
+const ICONS=[icon0,icon1,icon2,icon3];
+const icG=[0,1,2,3].map(i=>$('ic'+i));
+
+// ---- frame renderer
+let lastKey=null;
+window.renderAt=function(t){
+  let pi=-1;
+  for(let i=0;i<P.length;i++) if(t>=starts[i]&&t<starts[i]+P[i].dur) pi=i;
+  const inFinal=pi<0;
+  $('stage').style.display=inFinal?'none':'block';
+  $('prog').style.display=inFinal?'none':'flex';
+  $('final').style.display=inFinal?'flex':'none';
+  if(inFinal){
+    lastKey=null;
+    const ft=t-finalStart;
+    const k=eio(ft/1.2);
+    document.body.style.background=mix(DARK,LIGHT,k);
+    const delays=[1.0,2.0,3.4];
+    C.final.forEach((l,i)=>{
+      const a=eo((ft-delays[i])/.6), e=$('f'+i);
+      e.style.opacity=a.toFixed(3); e.style.transform=`translateY(${((1-a)*36).toFixed(1)}px)`;
+      e.querySelectorAll('.mk').forEach(m=>{m.style.backgroundSize=(100*eio((ft-delays[i]-.35)/.6)).toFixed(1)+'% 100%';});
+    });
+    return;
+  }
+  document.body.style.background=DARK;
+  const p=P[pi], lt=t-starts[pi], dur=p.dur;
+  progFill.forEach((el,j)=>{el.style.width=(100*(j<pi?1:j===pi?lt/dur:0)).toFixed(1)+'%';});
+  const aIn=eio(lt/.5), aOut=eio((dur-lt)/.5);
+  const st=$('stage'); st.style.opacity=(aIn*aOut).toFixed(3);
+  st.style.transform=`translateY(${((1-aIn)*24-(1-aOut)*24).toFixed(1)}px)`;
+  if($('tagText').textContent!==p.name) $('tagText').textContent=p.name;
+  icG.forEach((g,j)=>{g.style.display=j===pi?'inline':'none';});
+  ICONS[pi](lt,dur,t);
+  let idx=-1; for(let k=0;k<p.bounds.length;k++) if(lt>=p.bounds[k]) idx=k;
+  const sub=$('subIn');
+  if(idx<0){ if(sub.innerHTML!=='') sub.innerHTML=''; lastKey=null; }
+  else {
+    const key=pi+'-'+idx; if(key!==lastKey){sub.innerHTML=html(p.chunks[idx]);lastKey=key;}
+    const a=eo((lt-p.bounds[idx])/.22);
+    sub.style.opacity=a.toFixed(3); sub.style.transform=`translateY(${((1-a)*22).toFixed(1)}px)`;
+  }
+};
+if(location.hash==='#play'){const t0=performance.now();(function loop(){window.renderAt(((performance.now()-t0)/1000)%total);requestAnimationFrame(loop);})();}
+else window.renderAt(0.0);
+})();
+</script>
+</body></html>
