@@ -14,10 +14,17 @@ from kokoro_onnx import Kokoro
 
 here = pathlib.Path(__file__).parent
 SR, FPS = 24000, 30
+TAG = os.environ.get("TAG", "voz")
 VOICE, SPEED = "em_alex", 1.08
 LEAD, TAIL = 0.7, 0.6          # silencio al inicio / final de cada parte
 GAP = 0.30                     # pausa entre oraciones
 FINAL_LEAD, FINAL_GAP, FINAL_HOLD = 1.5, 0.45, 2.2
+# Estilo storytelling: ritmo más pausado, pausas largas y silencios dramáticos antes de los giros
+DRAMA = ("Hasta que un día", "Y claro, el primer intento", "Bueno, no será", "Hoy me puse", "Ese era yo")
+if TAG == "story":
+    SPEED, GAP, DRAMA_PAUSE = 0.98, 0.6, 0.4
+else:
+    DRAMA, DRAMA_PAUSE = (), 0
 
 
 def plain(s):
@@ -65,17 +72,20 @@ def chunk_bounds(chunks, a, L):
 def main():
     k = Kokoro(os.environ["KOKORO_MODEL"], os.environ["KOKORO_VOICES"])
     g = json.loads((here / "guion.json").read_text(encoding="utf-8"))
-    audio, t = [], 0.0   # (inicio_s, muestras)
+    audio, t, sent_starts = [], 0.0, []   # (inicio_s, muestras)
     parts = []
 
     for p in g["parts"]:
         start, cursor, bounds = t, LEAD, []
         sents = sentences(p["chunks"])
         for i, grp in enumerate(sents):
+            if i and plain(grp[0]).startswith(DRAMA):
+                cursor += DRAMA_PAUSE
             x = synth(k, " ".join(tts_text(c) for c in grp))
             L = len(x) / SR
             bounds += chunk_bounds(grp, cursor, L)
             audio.append((start + cursor, x))
+            sent_starts.append(round(start + cursor, 3))
             cursor += L + (GAP if i < len(sents) - 1 else 0)
         dur = round(cursor + TAIL, 3)
         parts.append({"name": p["name"], "dur": dur, "bounds": [round(b, 3) for b in bounds]})
@@ -87,6 +97,7 @@ def main():
         x = synth(k, tts_text(line))
         delays.append(round(cursor - 0.15, 3))
         audio.append((final_start + cursor, x))
+        sent_starts.append(round(final_start + cursor, 3))
         cursor += len(x) / SR + FINAL_GAP
     final_dur = round(cursor - FINAL_GAP + FINAL_HOLD, 3)
     total = final_start + final_dur
@@ -96,8 +107,8 @@ def main():
         i = int(s * SR)
         wav[i:i + len(x)] += x
     wav *= 0.89 / max(1e-6, np.abs(wav).max())
-    (here / "dist/voz").mkdir(parents=True, exist_ok=True)
-    sf.write(here / "dist/voz/narracion.wav", wav, SR)
+    (here / f"dist/{TAG}").mkdir(parents=True, exist_ok=True)
+    sf.write(here / f"dist/{TAG}/narracion.wav", wav, SR)
 
     # apertura de boca por cuadro (envolvente de energía)
     hop, n = SR // FPS, int(np.ceil(total * FPS)) + 2
@@ -112,8 +123,8 @@ def main():
         y[i] = prev
     mouth = [round(float(min(1, a)), 2) for a in y]
 
-    (here / "dist/timeline_voz.json").write_text(json.dumps({
-        "parts": parts, "finalDur": final_dur, "finalDelays": delays, "mouth": mouth,
+    (here / f"dist/timeline_{TAG}.json").write_text(json.dumps({
+        "parts": parts, "sentStarts": sent_starts, "finalDur": final_dur, "finalDelays": delays, "mouth": mouth,
     }, ensure_ascii=False))
     print("partes", [p["dur"] for p in parts], "final", final_dur, "total", round(total, 1), "s")
 
